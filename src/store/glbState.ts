@@ -273,6 +273,7 @@ export const useGLBState = create<GLBState>((set, get) => ({
   selectUnit: (building: string | null, floor: string | null, unit: string | null, skipCameraAnimation = false) => {
     const { glbNodes, isCameraAnimating } = get();
     
+    console.log('🔍 selectUnit called:', { building, floor, unit });
     
     // Reset all GLBs to invisible first
     glbNodes.forEach((node, key) => {
@@ -283,6 +284,8 @@ export const useGLBState = create<GLBState>((set, get) => ({
       // Set only the specific unit GLB to glowing
       const unitGLB = get().getGLBByUnit(building, floor, unit);
       
+      console.log('🔍 unitGLB found:', unitGLB ? unitGLB.key : 'NOT FOUND');
+      console.log('🔍 Total glbNodes:', glbNodes.size);
       
       if (unitGLB) {
         get().setGLBState(unitGLB.key, 'glowing');
@@ -293,6 +296,7 @@ export const useGLBState = create<GLBState>((set, get) => ({
         } else {
         }
       } else {
+        console.warn('⚠️ Unit GLB not found for:', buildNodeKey(building, floor, unit));
       }
     } else {
     }
@@ -553,11 +557,52 @@ export const useGLBState = create<GLBState>((set, get) => ({
       return;
     }
 
-    // Use the correct CameraControls API method
+    // Calculate eye-level camera position based on building
+    const eyeLevelHeight = 8; // Eye-level height (reduced from high angle)
+    const horizontalDistance = 15; // Distance from building for good view
+    let cameraX, cameraZ;
+    
+    // Building-specific camera positioning for straight-on views
+    if (building === "Fifth Street Building") {
+      // Front view from the west (rotated 180° from original east view)
+      cameraX = unitPosition.x - horizontalDistance;
+      cameraZ = unitPosition.z;
+    } else if (building === "Maryland Building") {
+      // Side view from the west (keep original)
+      cameraX = unitPosition.x - horizontalDistance;
+      cameraZ = unitPosition.z;
+    } else if (building === "Tower Building") {
+      // Front-facing view from the north (rotated 180° from original south view)
+      cameraX = unitPosition.x;
+      cameraZ = unitPosition.z - horizontalDistance;
+    } else {
+      // Default positioning for other buildings
+      cameraX = unitPosition.x + horizontalDistance * 0.7;
+      cameraZ = unitPosition.z + horizontalDistance * 0.7;
+    }
+    
+    const cameraPosition = new THREE.Vector3(cameraX, eyeLevelHeight, cameraZ);
+    
+    // Set eye-level target (slightly above unit base)
+    const targetY = unitPosition.y + 2; // Eye-level target height
+    const targetPosition = new THREE.Vector3(unitPosition.x, targetY, unitPosition.z);
+
+    // Use CameraControls API for smooth animation to new position
     try {
-      controls.setTarget(unitPosition.x, unitPosition.y, unitPosition.z, true);
+      // Animate to the new camera position and target
+      controls.setLookAt(
+        cameraPosition.x, cameraPosition.y, cameraPosition.z, // Camera position
+        targetPosition.x, targetPosition.y, targetPosition.z, // Target position
+        true // Enable smooth animation
+      );
+      
+      logger.log('CAMERA', '📷', `Positioned camera for ${building}:`, {
+        cameraPos: { x: cameraPosition.x, y: cameraPosition.y, z: cameraPosition.z },
+        targetPos: { x: targetPosition.x, y: targetPosition.y, z: targetPosition.z },
+        unit
+      });
     } catch (error) {
-      logger.error('Error setting camera target:', error);
+      logger.error('Error positioning camera:', error);
     }
   },
 

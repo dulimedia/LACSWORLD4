@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
+import { detectDevice } from '../../utils/deviceDetection';
 import { ExploreTab } from './ExploreTab';
 import { RequestTab } from './RequestTab';
 import { SuiteDetailsTab } from './SuiteDetailsTab';
@@ -7,11 +8,14 @@ import { useExploreState } from '../../store/exploreState';
 import { useGLBState } from '../../store/glbState';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { MobileDiagnostics } from '../../debug/mobileDiagnostics';
 
 export default function Sidebar() {
   const { tab, setTab, view, setView, floorPlanExpanded, setFloorPlanExpanded } = useSidebarState();
   const { drawerOpen, setDrawerOpen } = useExploreState();
   const { clearSelection, cameraControlsRef } = useGLBState();
+  const asideRef = useRef<HTMLElement | null>(null);
+  const isMobile = detectDevice().isMobile;
 
   const collapsed = !drawerOpen;
   const setCollapsed = (value: boolean) => {
@@ -36,6 +40,16 @@ export default function Sidebar() {
     setFloorPlanExpanded(false);
   };
 
+  useEffect(() => {
+    MobileDiagnostics.log('sidebar', 'state update', {
+      tab,
+      view,
+      collapsed,
+      floorPlanExpanded,
+    });
+    MobileDiagnostics.layout('sidebar', asideRef.current);
+  }, [tab, view, collapsed, floorPlanExpanded]);
+
   return (
     <>
       <button
@@ -57,6 +71,7 @@ export default function Sidebar() {
       </button>
 
       <aside
+        ref={asideRef}
         className={cn('sidebar', collapsed && 'is-collapsed', floorPlanExpanded && 'floorplan-expanded')}
         role="complementary"
         aria-label="Suite Controls"
@@ -72,7 +87,10 @@ export default function Sidebar() {
               <span>Back to Explore</span>
             </button>
           ) : (
-            <div className="inline-flex rounded-xl bg-black/5 p-1 w-full">
+            <div className={cn(
+              "rounded-xl bg-black/5 p-1 w-full",
+              isMobile ? "flex flex-col space-y-1" : "inline-flex"
+            )}>
               <button
                 className={cn(
                   'flex-1 px-3 py-1.5 rounded-lg text-sm font-medium transition',

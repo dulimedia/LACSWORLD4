@@ -21,8 +21,8 @@
 /* Phone / small tablets */
 @media (max-width: 768px) {
   :root {
-    --sidebar-w: clamp(320px, 50vw, 50vw);
-    --sidebar-pad: 14px;
+    --sidebar-w: clamp(280px, 42vw, 42vw);
+    --sidebar-pad: 10px;
     --fab-gap: 8px;
   }
 

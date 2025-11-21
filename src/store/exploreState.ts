@@ -1,6 +1,57 @@
 import { create } from 'zustand';
 import { emitEvent, getTimestamp, type ScopeType } from '../lib/events';
 
+// Excluded/unavailable suites that should be filtered out from all listings
+const EXCLUDED_SUITES = new Set([
+  // Exact matches from the requirement
+  'F-10', 'F110CR', 'ET-Lab', 'MG-Stage 7', 'M-40', 'M-45', 'M-50', 
+  'Studio O.M', 'T-110', 'T100', 'T-600', 'T-800', 'T900', 'T-950', 'T-1000',
+  
+  // Variations with different spacing/formatting to catch all possible formats
+  'F 10', 'F10', 'f-10', 'f 10', 'f10',
+  'F110 CR', 'F-110CR', 'F-110 CR', 'F 110 CR', 'f110cr', 'f-110cr', 'f-110 cr', 'f 110 cr',
+  'ET Lab', 'ET-Lab', 'et lab', 'et-lab', 'et_lab',
+  'MG Stage 7', 'MG-Stage7', 'MG Stage7', 'mg-stage 7', 'mg stage 7', 'mg-stage7', 'mg stage7',
+  'M 40', 'M40', 'm-40', 'm 40', 'm40',
+  'M 45', 'M45', 'm-45', 'm 45', 'm45', 
+  'M 50', 'M50', 'm-50', 'm 50', 'm50',
+  'Studio O M', 'Studio O.M.', 'Studio OM', 'studio o.m', 'studio o m', 'studio om', 'studio o.m.',
+  'T 110', 'T110', 't-110', 't 110', 't110',
+  'T 100', 't100', 't-100', 't 100',
+  'T 600', 'T600', 't-600', 't 600', 't600',
+  'T 800', 'T800', 't-800', 't 800', 't800', 
+  'T 900', 't900', 't-900', 't 900',
+  'T 950', 'T950', 't-950', 't 950', 't950',
+  'T 1000', 't-1000', 't 1000', 't1000'
+]);
+
+// Function to check if a unit name should be excluded
+export function isUnitExcluded(unitName: string): boolean {
+  if (!unitName) return false;
+  
+  // Normalize the unit name for comparison
+  const normalizedName = unitName.trim().toLowerCase()
+    .replace(/[\s\-_.]+/g, ' ')  // Replace separators with single space
+    .replace(/\s+/g, ' ')        // Replace multiple spaces with single space
+    .trim();
+  
+  // Check against all excluded patterns
+  for (const excluded of EXCLUDED_SUITES) {
+    const normalizedExcluded = excluded.toLowerCase()
+      .replace(/[\s\-_.]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    
+    if (normalizedName === normalizedExcluded || 
+        normalizedName.includes(normalizedExcluded) || 
+        normalizedExcluded.includes(normalizedName)) {
+      return true;
+    }
+  }
+  
+  return false;
+}
+
 export type UnitStatus = boolean; // true = Available, false = Unavailable
 
 export interface UnitRecord {
@@ -253,6 +304,11 @@ export const buildUnitsIndex = (units: Map<string, UnitRecord>): Record<string, 
   units.forEach((unit, unitKey) => {
     if (seenUnits.has(unit.unit_key)) return;
     seenUnits.add(unit.unit_key);
+    
+    // Skip excluded/unavailable suites
+    if (isUnitExcluded(unit.unit_name)) {
+      return;
+    }
     
     const { building, floor } = unit;
     

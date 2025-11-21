@@ -10,6 +10,7 @@ import { attachContextGuard } from '../perf/WebGLContextGuard';
 import { installErrorProbe } from '../perf/ErrorProbe';
 import { installDegradePolicy } from '../perf/FrameGovernor';
 import { log, SAFE } from '../lib/debug';
+import { MobileDiagnostics } from '../debug/mobileDiagnostics';
 
 export type RootCanvasProps = Omit<CanvasProps, 'children' | 'gl' | 'dpr'> & {
   children: ReactNode | ((tier: Tier) => ReactNode);
@@ -39,6 +40,7 @@ class CanvasErrorBoundary extends Component<any, { err?: any }> {
   componentDidCatch(err: any) {
     this.setState({ err });
     log.err('CanvasErrorBoundary caught error', err);
+    MobileDiagnostics.error('root-canvas', 'Canvas error boundary triggered', { message: String(err) });
   }
   render() {
     return this.state.err ? <Fallback reason={String(this.state.err)} /> : this.props.children;
@@ -50,11 +52,14 @@ function CanvasWatchdog({ children }: { children: ReactNode }) {
   
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (!document.querySelector('canvas')) {
+      const canvas = document.querySelector('canvas');
+      if (!canvas) {
         log.err('Watchdog: canvas never mounted in 12s');
+        MobileDiagnostics.error('watchdog', 'Canvas failed to mount within 12s');
         setOk(false);
       } else {
         log.info('Watchdog: canvas detected successfully');
+        MobileDiagnostics.layout('watchdog', canvas);
       }
     }, 12000);
     return () => clearTimeout(timer);
@@ -79,11 +84,13 @@ export function RootCanvas({ children, gl: glProp, onTierChange, ...canvasProps 
         if (cancelled) return;
         setTier(value);
         onTierChange?.(value);
+        MobileDiagnostics.log('tier', 'Tier detection resolved', { tier: value });
       })
       .catch(() => {
         if (cancelled) return;
         setTier('mobile-low');
         onTierChange?.('mobile-low');
+        MobileDiagnostics.warn('tier', 'Tier detection failed, defaulting to mobile-low');
       });
 
     return () => {
@@ -109,10 +116,12 @@ export function RootCanvas({ children, gl: glProp, onTierChange, ...canvasProps 
     canvas.addEventListener('webglcontextlost', (e) => {
       e.preventDefault();
       log.warn('webglcontextlost event');
+      MobileDiagnostics.warn('root-canvas', 'webglcontextlost');
     }, false);
     
     canvas.addEventListener('webglcontextrestored', () => {
       log.info('webglcontextrestored event');
+      MobileDiagnostics.log('root-canvas', 'webglcontextrestored');
     }, false);
 
     if (typeof glProp === 'function') {
@@ -130,6 +139,10 @@ export function RootCanvas({ children, gl: glProp, onTierChange, ...canvasProps 
     try {
       const result = await makeRenderer(canvas, tier);
       setRendererType(result.type);
+      MobileDiagnostics.log('renderer', 'Renderer created', {
+        type: result.type,
+        tier,
+      });
       
       const caps = result.renderer.capabilities as any;
       log.info('Renderer created', {
@@ -153,6 +166,7 @@ export function RootCanvas({ children, gl: glProp, onTierChange, ...canvasProps 
       return result.renderer;
     } catch (err) {
       log.err('Renderer creation failed', err);
+      MobileDiagnostics.error('renderer', 'Renderer creation failed', { message: String(err) });
       throw err;
     }
   }, [glProp, tier]);
@@ -161,6 +175,7 @@ export function RootCanvas({ children, gl: glProp, onTierChange, ...canvasProps 
     if (!tier) return null;
     if (rendererType) {
       console.log(`🎨 RootCanvas rendering with ${rendererType.toUpperCase()} (tier: ${tier})`);
+      MobileDiagnostics.log('renderer', 'Rendering with renderer', { rendererType, tier });
     }
     return typeof children === 'function' ? (children as (value: Tier) => ReactNode)(tier) : children;
   }, [children, tier, rendererType]);
@@ -170,6 +185,12 @@ export function RootCanvas({ children, gl: glProp, onTierChange, ...canvasProps 
   }
 
   const isMobile = typeof window !== 'undefined' && matchMedia('(max-width:768px)').matches;
+  MobileDiagnostics.log('root-canvas', 'Render props resolved', {
+    tier,
+    rendererType,
+    isMobile,
+    frameloop: SAFE || isMobile ? 'demand' : canvasProps.frameloop || 'always',
+  });
   
   return (
     <CanvasErrorBoundary>

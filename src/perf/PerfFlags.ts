@@ -1,4 +1,5 @@
 import { pickTier, type QualityTier } from './QualityTier';
+import { MobileDiagnostics } from '../debug/mobileDiagnostics';
 
 export type Tier = "mobileLow" | "desktopHigh";
 
@@ -14,7 +15,16 @@ export const PerfFlags = (() => {
   const isMobile = isMobileUA || (isTouchDevice && isNarrowViewport) || hasLowMemory || isSimulatorSize;
   const tier: Tier = (isMobile || isIOS) ? "mobileLow" : "desktopHigh";
   
-  console.log('🔧 PerfFlags initialized:', { isIOS, isMobile, tier, userAgent: userAgent.substring(0, 50) });
+  MobileDiagnostics.log('perf', 'PerfFlags initialized', {
+    isIOS,
+    isMobile,
+    tier,
+    userAgent: userAgent.substring(0, 80),
+    isTouchDevice,
+    isNarrowViewport,
+    hasLowMemory,
+    isSimulatorSize,
+  });
   
   const qualityTier: QualityTier = pickTier();
 

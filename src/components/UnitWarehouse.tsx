@@ -10,6 +10,7 @@ import FresnelMaterial from '../materials/FresnelMaterial';
 import { assetUrl } from '../lib/assets';
 import { PerfFlags } from '../perf/PerfFlags';
 import { logger } from '../utils/logger';
+import { FILTER_HIGHLIGHT_CONFIG } from '../config/ghostMaterialConfig';
 
 const DRACO_DECODER_CDN = 'https://www.gstatic.com/draco/versioned/decoders/1.5.6/';
 
@@ -532,6 +533,17 @@ const UnitWarehouseComponent: React.FC<UnitWarehouseProps> = ({
     metalness: 0.1,
   });
 
+  // Filter highlight material for units matching active filters
+  const filterHighlightMaterial = useMemo(() => new THREE.MeshStandardMaterial({
+    color: new THREE.Color(FILTER_HIGHLIGHT_CONFIG.color),
+    emissive: new THREE.Color(FILTER_HIGHLIGHT_CONFIG.emissive),
+    emissiveIntensity: FILTER_HIGHLIGHT_CONFIG.emissiveIntensity,
+    metalness: FILTER_HIGHLIGHT_CONFIG.metalness,
+    roughness: FILTER_HIGHLIGHT_CONFIG.roughness,
+    transparent: FILTER_HIGHLIGHT_CONFIG.transparent,
+    opacity: FILTER_HIGHLIGHT_CONFIG.opacity,
+  }), []);
+
   const [modelsLoaded, setModelsLoaded] = useState(false); 
   const groupRef = useRef<THREE.Group>(null);
   const loadedModelsRef = useRef<LoadedModel[]>([]);
@@ -722,6 +734,7 @@ const UnitWarehouseComponent: React.FC<UnitWarehouseProps> = ({
     const activeUnits = activeUnitsList;
 
     if (activeUnits.length > 0) {
+      console.log(`🎯 FILTER: Highlighting ${activeUnits.length} units`);
     }
 
     let activatedCount = 0;
@@ -733,49 +746,48 @@ const UnitWarehouseComponent: React.FC<UnitWarehouseProps> = ({
 
       model.object.traverse((child: Object3D) => {
         if (child instanceof Mesh) {
-          // Unit must BOTH be active in filter AND available in CSV to be visible
-          if (shouldBeActive && isAvailable) {
+          // Reset to original material first
+          if ((child as any).userData.originalMaterial) {
+            child.material = (child as any).userData.originalMaterial;
+          }
+
+          // Make all available units visible by default
+          if (isAvailable) {
             child.visible = true;
-            activatedCount++;
-
-            if (!(child as any).userData.originalMaterial) {
-              (child as any).userData.originalMaterial = child.material;
-            }
-
-            child.material = activeMaterial;
-          } else {
-            child.visible = false;
             
-            if (!isAvailable) {
-              hiddenByAvailabilityCount++;
-            }
+            // Apply filter highlighting to units that match active filters
+            if (shouldBeActive) {
+              activatedCount++;
 
-            if ((child as any).userData.originalMaterial) {
-              child.material = (child as any).userData.originalMaterial;
+              if (!(child as any).userData.originalMaterial) {
+                (child as any).userData.originalMaterial = child.material;
+              }
+
+              // Apply filter highlight material instead of hiding other units
+              child.material = filterHighlightMaterial;
+              child.visible = true;
             }
+          } else {
+            // Hide unavailable units
+            child.visible = false;
+            hiddenByAvailabilityCount++;
           }
         }
       });
     });
 
     if (activatedCount > 0) {
+      console.log(`✨ HIGHLIGHT: Applied filter highlighting to ${activatedCount} units`);
     }
     if (hiddenByAvailabilityCount > 0) {
+      console.log(`👻 HIDDEN: ${hiddenByAvailabilityCount} units hidden (unavailable)`);
     }
     if (activeUnits.length > 0 && activatedCount === 0) {
       logger.warn('GLB', '❌', `FILTER SET but NO MESHES ACTIVATED! Available models:`, boxLoadedModels.map(m => m.name));
     }
-  }, [activeFilter, boxLoadedModels, activeUnitsList, isUnitActive, isUnitAvailable, activeMaterial]);
+  }, [activeFilter, boxLoadedModels, activeUnitsList, isUnitActive, isUnitAvailable, filterHighlightMaterial]);
 
   useEffect(() => {
-    boxLoadedModels.forEach(model => {
-      model.object.traverse((child: Object3D) => {
-        if (child instanceof Mesh && (child as any).userData.originalMaterial) {
-          child.material = (child as any).userData.originalMaterial;
-        }
-      });
-    });
-
     if (!selectedUnit) {
       return; 
     }
@@ -794,7 +806,9 @@ const UnitWarehouseComponent: React.FC<UnitWarehouseProps> = ({
           if (!(child as any).userData.originalMaterial) {
             (child as any).userData.originalMaterial = child.material;
           }
+          // Selection highlight takes priority over filter highlighting
           child.material = highlightMaterial;
+          child.visible = true;
         }
       });
     }
@@ -802,21 +816,6 @@ const UnitWarehouseComponent: React.FC<UnitWarehouseProps> = ({
 
   // Hover highlighting effect (separate from selection)
   useEffect(() => {
-    // Reset all hover materials first
-    boxLoadedModels.forEach(model => {
-      model.object.traverse((child: Object3D) => {
-        if (child instanceof Mesh) {
-          // Only reset hover material if it's not the selected unit
-          if (model.name !== selectedUnit) {
-            const originalMaterial = (child as any).userData.originalMaterial;
-            if (originalMaterial && child.material === hoverMaterial) {
-              child.material = originalMaterial;
-            }
-          }
-        }
-      });
-    });
-
     // Apply hover material if there's a hovered unit AND it's available
     if (filterHoveredUnit && filterHoveredUnit !== selectedUnit) {
       const isAvailable = isUnitAvailable(filterHoveredUnit);
@@ -833,7 +832,9 @@ const UnitWarehouseComponent: React.FC<UnitWarehouseProps> = ({
             if (!(child as any).userData.originalMaterial) {
               (child as any).userData.originalMaterial = child.material;
             }
+            // Hover highlight takes priority over filter highlighting
             child.material = hoverMaterial;
+            child.visible = true;
           }
         });
       }
@@ -859,6 +860,13 @@ const UnitWarehouseComponent: React.FC<UnitWarehouseProps> = ({
 
     if (activeMaterial && typeof activeMaterial.update === 'function') {
       activeMaterial.update();
+    }
+
+    // Update filter highlight pulsing animation
+    if (FILTER_HIGHLIGHT_CONFIG.pulsing && filterHighlightMaterial) {
+      const time = state.clock.elapsedTime;
+      const pulseAmount = (Math.sin(time * 3.0) + 1.0) * 0.5; // 0 to 1
+      filterHighlightMaterial.emissiveIntensity = FILTER_HIGHLIGHT_CONFIG.emissiveIntensity * (0.5 + pulseAmount * 0.5);
     }
 
     if (frameCounter.current % 3 !== 0) return;
@@ -964,3 +972,6 @@ export const UnitWarehouse: React.FC<UnitWarehouseProps> = (props) => {
 };
 
 export default UnitWarehouse;
+
+
+

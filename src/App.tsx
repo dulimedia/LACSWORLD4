@@ -30,12 +30,17 @@ import { MobileErrorBoundary } from './components/MobileErrorBoundary';
 import { Lighting } from './scene/Lighting';
 import { ShadowHelper } from './components/ShadowHelper';
 import { Effects } from './components/Effects';
+// Performance-based lighting and effects
+import { AdaptiveLighting } from './components/lighting/AdaptiveLighting';
+import { SoftShadowsController } from './components/lighting/SoftShadowsController';
+import { AtmosphericFog } from './components/environment/AtmosphericFog';
+import { AdaptiveEffects } from './components/postprocessing/AdaptiveEffects';
 import { lazy, Suspense } from 'react';
 const PathTracer = lazy(() => import('./components/pathtracer/PathTracer').then(m => ({ default: m.PathTracer })));
 import { useFaceDebugHotkey } from './hooks/useFaceDebugHotkey';
 import { useUnitStore } from './stores/useUnitStore';
 import { useSidebarState } from './ui/Sidebar/useSidebarState';
-import { useExploreState, buildUnitsIndex, type UnitRecord } from './store/exploreState';
+import { useExploreState, buildUnitsIndex, isUnitExcluded, type UnitRecord } from './store/exploreState';
 import { useGLBState } from './store/glbState';
 import { useCsvUnitData } from './hooks/useCsvUnitData';
 import { emitEvent, getTimestamp } from './lib/events';
@@ -46,7 +51,8 @@ import type { Tier } from './lib/graphics/tier';
 import { ErrorLogDisplay } from './components/ErrorLogDisplay';
 import { PerfFlags } from './perf/PerfFlags';
 import { PerformanceGovernorComponent } from './components/PerformanceGovernorComponent';
-import { log as debugLog, SAFE } from './lib/debug';
+import { log as debugLog, SAFE, Q } from './lib/debug';
+import { MobileDiagnostics } from './debug/mobileDiagnostics';
 
 
 // Component to capture scene and gl refs + setup safety
@@ -377,6 +383,14 @@ const DetailsSidebar: React.FC<{
 
 function App() {
   const [canvasReady, setCanvasReady] = useState(false);
+  const [scenePolicy] = useState(() => {
+    const param = Q.get('scene');
+    const enabled = param === '0' ? false : true;
+    const reason = enabled ? null : 'forced-off';
+    MobileDiagnostics.log('scene', 'Scene policy resolved', { param, enabled, reason, isMobile: PerfFlags.isMobile });
+    return { enabled, reason, param };
+  });
+  const { enabled: sceneEnabled, reason: sceneDisableReason, param: sceneParam } = scenePolicy;
   const { selectedUnit, hoveredUnit, setSelectedUnit, setHoveredUnit } = useUnitStore();
   
   useEffect(() => {
@@ -480,6 +494,16 @@ function App() {
     // Shadow settings are now handled by SimpleShadowDebug component directly
   }, []);
   const mobileSettings = useMemo(() => getMobileOptimizedSettings(deviceCapabilities), [deviceCapabilities]);
+  
+  useEffect(() => {
+    if (!sceneEnabled) {
+      MobileDiagnostics.warn('scene', '3D scene disabled', {
+        reason: sceneDisableReason,
+        param: sceneParam,
+        isMobile: PerfFlags.isMobile,
+      });
+    }
+  }, [sceneEnabled, sceneDisableReason, sceneParam]);
   
   // Shadow-enabled renderer configuration (iOS-optimized)
   const glConfig = useMemo(() => {
@@ -591,8 +615,8 @@ function App() {
     }
   }, [setCameraControlsRef]);
   
-  // Use new CSV-based data fetching (skip on iOS to reduce memory)
-  const { data: csvUnitData, loading: isUnitDataLoading, error } = useCsvUnitData(PerfFlags.isIOS ? '' : CSV_URL);
+  // Use new CSV-based data fetching
+  const { data: csvUnitData, loading: isUnitDataLoading, error } = useCsvUnitData(CSV_URL);
   
   // Initialize viewer and emit ready event when models are loaded
   useEffect(() => {
@@ -753,13 +777,8 @@ function App() {
   // Get explore state actions
   const { setUnitsData, setUnitsIndex } = useExploreState();
 
-  // Integrate CSV data into explore state (skip on iOS)
+  // Integrate CSV data into explore state
   useEffect(() => {
-    if (PerfFlags.isIOS) {
-      console.log('📱 iOS: Skipping CSV data processing to save memory');
-      return;
-    }
-    
     if (hasValidUnitData && csvUnitData) {
       
       // Convert CSV data to UnitRecord format for explore state
@@ -771,6 +790,11 @@ function App() {
       Object.entries(csvUnitData).forEach(([unitKey, unitData]) => {
         // Skip buildings we don't want to show
         if (!allowedBuildings.includes(unitData.building)) {
+          return;
+        }
+        
+        // Skip excluded/unavailable suites at the data level
+        if (isUnitExcluded(unitData.unit_name || unitData.name || unitKey)) {
           return;
         }
         
@@ -831,7 +855,6 @@ function App() {
   const handleUnitSelect = useCallback((unitName: string) => {
     setSelectedUnit(unitName);
     setShowFullDetails(false); // Reset full details when selecting a new unit
-    setIsFilterDropdownOpen(false); // Close filter dropdown when unit is selected from scene
   }, []);
 
   const handleDetailsClick = () => {
@@ -1133,7 +1156,7 @@ function App() {
         
         
         {/* CRITICAL FIX: Wrap canvas in error boundary to catch mobile crashes */}
-        {canvasReady && (
+        {canvasReady && sceneEnabled && (
         <MobileErrorBoundary>
         <RootCanvas
           shadows={!PerfFlags.isIOS}
@@ -1170,15 +1193,12 @@ function App() {
                 <color attach="background" args={['#87CEEB']} />
               )}
 
-              {/* Lighting System - iOS gets simple lighting, desktop gets full shadows */}
-              {!PerfFlags.isIOS && tier !== 'mobile-low' && (
-                <Lighting 
-                  sunPosition={sunPosition}
-                  shadowBias={-0.006}
-                  shadowNormalBias={0.35}
-                  shadowMaxExtent={210}
-                  shadowMargin={6}
-                />
+              {/* Adaptive Performance-Based Lighting System */}
+              {!PerfFlags.isIOS && tier !== 'mobile-low' && sceneRef.current && (
+                <>
+                  <AdaptiveLighting scene={sceneRef.current} tier={tier} />
+                  <SoftShadowsController tier={tier} />
+                </>
               )}
               
               {/* Simple lighting for iOS and mobile-low (no shadows to reduce memory) */}
@@ -1194,6 +1214,9 @@ function App() {
 
               {/* Volumetric fog for god rays - only for desktop */}
               {tier.startsWith('desktop') && <fogExp2 attach="fog" args={['#b8d0e8', 0.004]} />}
+
+              {/* Adaptive Atmospheric Fog */}
+              <AtmosphericFog />
 
               {/* Capture scene and gl for external callbacks */}
               <SceneCapture sceneRef={sceneRef} glRef={glRef} />
@@ -1224,9 +1247,9 @@ function App() {
               {/* Performance Governor - mobile FPS enforcement */}
               <PerformanceGovernorComponent />
 
-              {/* Post-processing Effects - enabled on desktop only */}
+              {/* Adaptive Post-processing Effects - enabled on desktop only */}
               {!SAFE && effectsReady && !PerfFlags.isMobile && !deviceCapabilities.isMobile && !PerfFlags.isIOS && debugState.ao && !debugState.pathtracer && (
-                <Effects tier={renderTier} enabled={debugState.ao} />
+                <AdaptiveEffects tier={tier} />
               )}
 
               {/* GPU Path Tracer - mutually exclusive with post-processing */}
@@ -1262,6 +1285,17 @@ function App() {
         </MobileErrorBoundary>
         )}
 
+        {!sceneEnabled && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-100/80 border border-dashed border-slate-300 rounded-2xl text-center px-6 py-8">
+            <p className="font-semibold text-slate-800">3D scene disabled for mobile UI focus</p>
+            <p className="text-sm text-slate-600 mt-2 max-w-sm">
+              {sceneDisableReason === 'forced-off'
+                ? 'The ?scene=0 flag is active. Remove it or set ?scene=1 to re-enable the 3D environment.'
+                : 'Mobile safe mode temporarily disables the 3D environment. Append ?scene=1 to the URL if you need to test it.'}
+            </p>
+          </div>
+        )}
+
 
           </div>  {/* Close scene-shell */}
         
@@ -1269,7 +1303,7 @@ function App() {
         
 
         {/* Camera Controls - Bottom Center (Desktop) / Right Side (Mobile) */}
-        {!modelsLoading && (
+        {sceneEnabled && !modelsLoading && (
           <div 
             className={deviceCapabilities.isMobile 
               ? "fixed right-4 z-40" 

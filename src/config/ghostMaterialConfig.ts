@@ -40,6 +40,18 @@ export const HOVERED_MATERIAL_CONFIG = {
   emissiveIntensity: 0.2,    // Subtle intensity
 };
 
+// Filter highlight configuration - for units matching active filters
+export const FILTER_HIGHLIGHT_CONFIG = {
+  color: 0x00d5ff,           // Cyan color
+  emissive: 0x00d5ff,        // Cyan emissive glow
+  emissiveIntensity: 0.4,    // Medium-high intensity
+  metalness: 0.2,            // Slight metallic look
+  roughness: 0.3,            // Smooth surface
+  transparent: true,
+  opacity: 0.8,              // Semi-transparent
+  pulsing: true,             // Enable pulsing animation
+};
+
 // Alternative presets for different visual styles
 export const GHOST_MATERIAL_PRESETS = {
   subtle: {

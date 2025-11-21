@@ -1,7 +1,8 @@
-import React, { useState, useMemo } from 'react';
-import { useExploreState } from '../../store/exploreState';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useExploreState, isUnitExcluded } from '../../store/exploreState';
 import { useSidebarState } from './useSidebarState';
 import { useGLBState } from '../../store/glbState';
+import { useFilterStore } from '../../stores/useFilterStore';
 import { ChevronDown, ChevronRight, Sliders, Home } from 'lucide-react';
 import { detectDevice } from '../../utils/deviceDetection';
 
@@ -10,12 +11,21 @@ const SIZE_OPTIONS = [
   { value: '<1500', label: '<1,500 sf', min: 0, max: 1499 },
   { value: '1500-4000', label: '1,500-4,000 sf', min: 1500, max: 4000 },
   { value: '5000-9000', label: '5,000-9,000 sf', min: 5000, max: 9000 },
-  { value: '9001-19000', label: '9,001-19,000 sf', min: 9001, max: 19000 },
+  { value: '9001-18000', label: '9,001-18,000 sf', min: 9001, max: 18000 },
 ];
 
-const KITCHEN_OPTIONS = [
+const STATUS_OPTIONS = [
   { value: 'any', label: 'Any' },
-  { value: 'with', label: 'With Kitchen' },
+  { value: 'plug-and-play', label: 'Plug and Play' },
+  { value: 'build-to-suit', label: 'Build to Suit' },
+];
+
+const OFFICES_OPTIONS = [
+  { value: 'any', label: 'Any' },
+  { value: '0', label: '0' },
+  { value: '1-3', label: '1-3' },
+  { value: '4-6', label: '4-6' },
+  { value: '7+', label: '7+' },
 ];
 
 export function ExploreTab() {
@@ -30,22 +40,33 @@ export function ExploreTab() {
   
   const { setView } = useSidebarState();
   const { selectUnit } = useGLBState();
+  const { setFilter, clearFilter } = useFilterStore();
   const isMobile = detectDevice().isMobile;
 
   const [sizeFilter, setSizeFilter] = useState<string>('any');
-  const [kitchenFilter, setKitchenFilter] = useState<string>('any');
+  const [statusFilter, setStatusFilter] = useState<string>('any');
+  const [officesFilter, setOfficesFilter] = useState<string>('any');
   const [filtersVisible, setFiltersVisible] = useState<boolean>(true);
   const [expandedBuildings, setExpandedBuildings] = useState<Set<string>>(new Set());
+  const [initialized, setInitialized] = useState(false);
   const [expandedFloors, setExpandedFloors] = useState<Set<string>>(new Set());
 
   const toggleBuilding = (building: string) => {
-    const newExpanded = new Set(expandedBuildings);
-    if (newExpanded.has(building)) {
-      newExpanded.delete(building);
+    if (isMobile) {
+      if (expandedBuildings.has(building)) {
+        setExpandedBuildings(new Set());
+      } else {
+        setExpandedBuildings(new Set([building]));
+      }
     } else {
-      newExpanded.add(building);
+      const newExpanded = new Set(expandedBuildings);
+      if (newExpanded.has(building)) {
+        newExpanded.delete(building);
+      } else {
+        newExpanded.add(building);
+      }
+      setExpandedBuildings(newExpanded);
     }
-    setExpandedBuildings(newExpanded);
   };
 
   const toggleFloor = (floorKey: string) => {
@@ -84,6 +105,11 @@ export function ExploreTab() {
             const unit = unitsData.get(unitKey);
             if (!unit) return;
 
+            // Skip excluded/unavailable suites
+            if (isUnitExcluded(unit.unit_name)) {
+              return;
+            }
+
             let passes = true;
 
             if (showAvailableOnly && !unit.status) {
@@ -99,9 +125,28 @@ export function ExploreTab() {
               }
             }
 
-            if (kitchenFilter === 'with') {
-              const hasKitchen = unit.kitchen_size && unit.kitchen_size.toLowerCase() !== 'none';
-              if (!hasKitchen) {
+            if (statusFilter !== 'any') {
+              const unitType = (unit.unit_type || '').toLowerCase();
+              if (statusFilter === 'plug-and-play') {
+                if (!unitType.includes('plug') && !unitType.includes('ready') && !unitType.includes('move-in')) {
+                  passes = false;
+                }
+              } else if (statusFilter === 'build-to-suit') {
+                if (!unitType.includes('build') && !unitType.includes('custom') && !unitType.includes('suit') && !unitType.includes('shell')) {
+                  passes = false;
+                }
+              }
+            }
+
+            if (officesFilter !== 'any' && unit.private_offices !== undefined && unit.private_offices !== null) {
+              const officeCount = unit.private_offices;
+              if (officesFilter === '0' && officeCount !== 0) {
+                passes = false;
+              } else if (officesFilter === '1-3' && (officeCount < 1 || officeCount > 3)) {
+                passes = false;
+              } else if (officesFilter === '4-6' && (officeCount < 4 || officeCount > 6)) {
+                passes = false;
+              } else if (officesFilter === '7+' && officeCount < 7) {
                 passes = false;
               }
             }
@@ -149,6 +194,11 @@ export function ExploreTab() {
             const unit = unitsData.get(unitKey);
             if (!unit) return;
 
+            // Skip excluded/unavailable suites
+            if (isUnitExcluded(unit.unit_name)) {
+              return;
+            }
+
             let passes = true;
 
             if (showAvailableOnly && !unit.status) {
@@ -164,9 +214,28 @@ export function ExploreTab() {
               }
             }
 
-            if (kitchenFilter === 'with') {
-              const hasKitchen = unit.kitchen_size && unit.kitchen_size.toLowerCase() !== 'none';
-              if (!hasKitchen) {
+            if (statusFilter !== 'any') {
+              const unitType = (unit.unit_type || '').toLowerCase();
+              if (statusFilter === 'plug-and-play') {
+                if (!unitType.includes('plug') && !unitType.includes('ready') && !unitType.includes('move-in')) {
+                  passes = false;
+                }
+              } else if (statusFilter === 'build-to-suit') {
+                if (!unitType.includes('build') && !unitType.includes('custom') && !unitType.includes('suit') && !unitType.includes('shell')) {
+                  passes = false;
+                }
+              }
+            }
+
+            if (officesFilter !== 'any' && unit.private_offices !== undefined && unit.private_offices !== null) {
+              const officeCount = unit.private_offices;
+              if (officesFilter === '0' && officeCount !== 0) {
+                passes = false;
+              } else if (officesFilter === '1-3' && (officeCount < 1 || officeCount > 3)) {
+                passes = false;
+              } else if (officesFilter === '4-6' && (officeCount < 4 || officeCount > 6)) {
+                passes = false;
+              } else if (officesFilter === '7+' && officeCount < 7) {
                 passes = false;
               }
             }
@@ -189,7 +258,103 @@ export function ExploreTab() {
         floorGroups
       };
     }).filter(b => b.suiteCount > 0);
-  }, [unitsByBuilding, unitsData, showAvailableOnly, sizeFilter, kitchenFilter]);
+  }, [unitsByBuilding, unitsData, showAvailableOnly, sizeFilter, statusFilter, officesFilter]);
+
+  useEffect(() => {
+    if (groupedByBuilding.length === 0 || initialized) return;
+    
+    setInitialized(true);
+    
+    // Set all buildings and floors to expanded by default
+    setExpandedBuildings(new Set(groupedByBuilding.map(b => b.name)));
+    const allFloors = new Set<string>();
+    groupedByBuilding.forEach(b => {
+      b.floorGroups.forEach(f => {
+        if (f.floorName) {
+          allFloors.add(`${b.name}/${f.floorName}`);
+        }
+      });
+    });
+    setExpandedFloors(allFloors);
+  }, [groupedByBuilding, isMobile, initialized]);
+
+  // Update visual highlighting when filters change
+  useEffect(() => {
+    // If all filters are set to 'any', clear the filter highlighting
+    if (sizeFilter === 'any' && statusFilter === 'any' && officesFilter === 'any') {
+      clearFilter();
+      return;
+    }
+
+    // Create a list of units that match the current filters
+    const filteredUnits: string[] = [];
+    
+    groupedByBuilding.forEach(building => {
+      building.floorGroups.forEach(floor => {
+        floor.units.forEach(({ unit }) => {
+          // Check if unit passes all active filters
+          let passes = true;
+
+          // Size filter
+          if (sizeFilter !== 'any' && unit.area_sqft) {
+            const option = SIZE_OPTIONS.find(o => o.value === sizeFilter);
+            if (option && option.min !== -1 && option.max !== -1) {
+              if (unit.area_sqft < option.min || unit.area_sqft > option.max) {
+                passes = false;
+              }
+            }
+          }
+
+          // Status filter
+          if (statusFilter !== 'any') {
+            const unitType = (unit.unit_type || '').toLowerCase();
+            if (statusFilter === 'plug-and-play') {
+              if (!unitType.includes('plug') && !unitType.includes('ready') && !unitType.includes('move-in')) {
+                passes = false;
+              }
+            } else if (statusFilter === 'build-to-suit') {
+              if (!unitType.includes('build') && !unitType.includes('custom') && !unitType.includes('suit') && !unitType.includes('shell')) {
+                passes = false;
+              }
+            }
+          }
+
+          // Offices filter
+          if (officesFilter !== 'any' && unit.private_offices !== undefined && unit.private_offices !== null) {
+            const officeCount = unit.private_offices;
+            if (officesFilter === '0' && officeCount !== 0) {
+              passes = false;
+            } else if (officesFilter === '1-3' && (officeCount < 1 || officeCount > 3)) {
+              passes = false;
+            } else if (officesFilter === '4-6' && (officeCount < 4 || officeCount > 6)) {
+              passes = false;
+            } else if (officesFilter === '7+' && officeCount < 7) {
+              passes = false;
+            }
+          }
+
+          if (passes) {
+            // Convert unit name to the format expected by the filter store
+            const unitName = unit.unit_name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '');
+            filteredUnits.push(unitName);
+          }
+        });
+      });
+    });
+
+    // Create a custom filter selection to trigger visual highlighting
+    if (filteredUnits.length > 0) {
+      // Use the customUnits approach for property-based filtering
+      setFilter({
+        level: 'unit',
+        customUnits: filteredUnits,
+        path: `property-filter/${filteredUnits.length}-units`
+      });
+      console.log(`🎯 EXPLORE FILTER: Highlighting ${filteredUnits.length} units based on property filters`);
+    } else {
+      clearFilter();
+    }
+  }, [sizeFilter, statusFilter, officesFilter, groupedByBuilding, setFilter, clearFilter]);
 
   return (
     <div className={isMobile ? "space-y-2" : "space-y-4"}>
@@ -208,13 +373,25 @@ export function ExploreTab() {
             </select>
           </label>
           <label className="block">
-            <span className="text-xs font-semibold uppercase tracking-wide text-black/60 mb-1 block">Kitchen</span>
+            <span className="text-xs font-semibold uppercase tracking-wide text-black/60 mb-1 block">Status</span>
             <select
-              value={kitchenFilter}
-              onChange={(e) => setKitchenFilter(e.target.value)}
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
               className="w-full text-xs px-2 py-1.5 rounded border border-black/10 bg-white"
             >
-              {KITCHEN_OPTIONS.map(opt => (
+              {STATUS_OPTIONS.map(opt => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          </label>
+          <label className="block">
+            <span className="text-xs font-semibold uppercase tracking-wide text-black/60 mb-1 block"># of Offices</span>
+            <select
+              value={officesFilter}
+              onChange={(e) => setOfficesFilter(e.target.value)}
+              className="w-full text-xs px-2 py-1.5 rounded border border-black/10 bg-white"
+            >
+              {OFFICES_OPTIONS.map(opt => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
             </select>
@@ -275,16 +452,41 @@ export function ExploreTab() {
       <div>
         <div className="flex items-center space-x-2 mb-2">
           <Home size={14} className="text-gray-500" />
-          <span className="text-xs font-semibold uppercase tracking-wide text-black/60">Kitchen</span>
+          <span className="text-xs font-semibold uppercase tracking-wide text-black/60">Status</span>
         </div>
-        <div className="flex space-x-2">
-          {KITCHEN_OPTIONS.map((option) => {
-            const isActive = kitchenFilter === option.value;
+        <div className="grid grid-cols-3 gap-2">
+          {STATUS_OPTIONS.map((option) => {
+            const isActive = statusFilter === option.value;
             return (
               <button
                 key={option.value}
-                onClick={() => setKitchenFilter(option.value)}
-                className={`flex-1 text-xs px-3 py-2 rounded-lg transition-colors ${
+                onClick={() => setStatusFilter(option.value)}
+                className={`text-xs px-3 py-2 rounded-lg transition-colors ${
+                  isActive
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                {option.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div>
+        <div className="flex items-center space-x-2 mb-2">
+          <Home size={14} className="text-gray-500" />
+          <span className="text-xs font-semibold uppercase tracking-wide text-black/60"># of Offices</span>
+        </div>
+        <div className="grid grid-cols-5 gap-2">
+          {OFFICES_OPTIONS.map((option) => {
+            const isActive = officesFilter === option.value;
+            return (
+              <button
+                key={option.value}
+                onClick={() => setOfficesFilter(option.value)}
+                className={`text-xs px-3 py-2 rounded-lg transition-colors ${
                   isActive
                     ? 'bg-blue-500 text-white'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -326,7 +528,7 @@ export function ExploreTab() {
                   // For Tower Building, render units directly without floor grouping
                   if (isTowerBuilding) {
                     return (
-                      <div key={floor.floorName} className={isMobile ? "px-1 pb-0.5 grid grid-cols-2 gap-0.5" : "px-2 pb-1 space-y-1"}>
+                      <div key={floor.floorName} className={isMobile ? "px-1 pb-0.5 space-y-0.5" : "px-2 pb-1 space-y-1"}>
                         {floor.units.map(({unitKey, unit}) => (
                           <button
                             key={unitKey}
@@ -373,7 +575,7 @@ export function ExploreTab() {
                       </button>
                       
                       {isFloorExpanded && (
-                        <div className={isMobile ? "px-1 pb-0.5 grid grid-cols-2 gap-0.5" : "px-2 pb-1 space-y-1"}>
+                        <div className={isMobile ? "px-1 pb-0.5 space-y-0.5" : "px-2 pb-1 space-y-1"}>
                           {floor.units.map(({unitKey, unit}) => (
                             <button
                               key={unitKey}

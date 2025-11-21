@@ -8,6 +8,7 @@ export interface FilterSelection {
   floor?: string;
   unit?: string;
   path?: string; // Full path like "First Street Building/First Floor/F-115.glb"
+  customUnits?: string[]; // Custom list of unit names for property-based filtering
 }
 
 interface FilterState {
@@ -75,6 +76,14 @@ export const useFilterStore = create<FilterState>((set, get) => ({
   setFilter: (filter: FilterSelection | null) => {
     if (!filter) {
       set({ activeFilter: null, activeUnits: new Set() });
+      return;
+    }
+    
+    // If custom units are provided, use them directly
+    if (filter.customUnits) {
+      const activeUnits = new Set(filter.customUnits);
+      set({ activeFilter: filter, activeUnits });
+      console.log(`📦 CUSTOM FILTER SET: ${Array.from(activeUnits).join(', ')}`);
       return;
     }
     

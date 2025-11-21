@@ -1,5 +1,5 @@
 import { useGLTF } from '@react-three/drei';
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo } from 'react';
 import * as THREE from 'three';
 import { makeFacesBehave } from '../utils/makeFacesBehave';
 import { fixInvertedFacesSelective } from '../utils/fixInvertedFacesSelective';
@@ -16,7 +16,6 @@ interface SingleEnvironmentMeshProps {
 
 const DRACO_DECODER_CDN = 'https://www.gstatic.com/draco/versioned/decoders/1.5.6/';
 const OTHER_ENVIRONMENT_COUNT = 7;
-const MOBILE_PHASE_COUNT = 4;
 
 function useDracoGLTF(path: string) {
   return useGLTF(path, DRACO_DECODER_CDN);
@@ -26,6 +25,12 @@ export function SingleEnvironmentMesh({ tier }: SingleEnvironmentMeshProps) {
   const { gl } = useThree();
   
   const isMobile = (tier === 'mobile-low');
+
+  if (isMobile) {
+    console.log('dY"? SingleEnvironmentMesh: mobile palms mode');
+    return <MobileEnvironment />;
+  }
+  console.log('dY"? SingleEnvironmentMesh: desktop environment mode');
   
   const accessory = useDracoGLTF('/models/environment/accessory concrete.glb');
   const hqSidewalk = useDracoGLTF('/models/environment/hq sidewalk 2.glb');
@@ -94,136 +99,7 @@ export function SingleEnvironmentMesh({ tier }: SingleEnvironmentMeshProps) {
 
 
 
-  const mobilePhaseDispatch = useRef({
-
-    started: false,
-
-    others: false,
-
-    frame: false,
-
-    roof: false,
-
-    stages: false,
-
-    completed: false
-
-  });
-
-
-
-  const sendMobileUpdate = (phase: 'others' | 'frame' | 'roof' | 'stages', step: number, message: string) => {
-
-    if (!window.dispatchEvent) return;
-
-    window.dispatchEvent(new CustomEvent('mobile-loading-update', {
-
-      detail: {
-
-        phase: `${phase}-complete`,
-
-        progress: Math.round((step / MOBILE_PHASE_COUNT) * 100),
-
-        message
-
-      }
-
-    }));
-
-  };
-
-  
-
-  console.log('dY"? SingleEnvironmentMesh:', { 
-
-    isMobile, 
-
-    tier, 
-
-    loadingModels: 'Draco environment set (10 GLBs)',
-
-    reason: isMobile ? 'Environment enabled using compressed assets' : 'Desktop has sufficient memory'
-
-  });
-
-  
-
-  const shadowsEnabled = gl && (gl as any).shadowMap?.enabled !== false && !isMobile;
-
-
-
-  useEffect(() => {
-
-    if (!isMobile || mobilePhaseDispatch.current.started) return;
-
-    mobilePhaseDispatch.current.started = true;
-
-    if (window.dispatchEvent) {
-
-      window.dispatchEvent(new CustomEvent('mobile-loading-start', {
-
-        detail: {
-
-          phase: 'mobile-environment-loading',
-
-          message: 'Loading Draco-compressed environment assets...'
-
-        }
-
-      }));
-
-    }
-
-  }, [isMobile]);
-
-
-
-  useEffect(() => {
-
-    if (!isMobile || !othersReady || mobilePhaseDispatch.current.others) return;
-
-    mobilePhaseDispatch.current.others = true;
-
-    sendMobileUpdate('others', 1, 'Environment assets ready (1/4)');
-
-  }, [isMobile, othersReady]);
-
-
-
-  useEffect(() => {
-
-    if (!isMobile || !frameReady || mobilePhaseDispatch.current.frame) return;
-
-    mobilePhaseDispatch.current.frame = true;
-
-    sendMobileUpdate('frame', 2, 'Frame ready (2/4)');
-
-  }, [isMobile, frameReady]);
-
-
-
-  useEffect(() => {
-
-    if (!isMobile || !roofReady || mobilePhaseDispatch.current.roof) return;
-
-    mobilePhaseDispatch.current.roof = true;
-
-    sendMobileUpdate('roof', 3, 'Roof & walls ready (3/4)');
-
-  }, [isMobile, roofReady]);
-
-
-
-  useEffect(() => {
-
-    if (!isMobile || !stagesReady || mobilePhaseDispatch.current.stages) return;
-
-    mobilePhaseDispatch.current.stages = true;
-
-    sendMobileUpdate('stages', 4, 'Stages ready (4/4)');
-
-  }, [isMobile, stagesReady]);
-
+  const shadowsEnabled = gl && (gl as any).shadowMap?.enabled !== false;
 
 
   useEffect(() => {
@@ -746,14 +622,60 @@ export function SingleEnvironmentMesh({ tier }: SingleEnvironmentMeshProps) {
 
 
 
-  return (
-    <>
-      {otherScenes.map((scene, index) => (
-        <primitive key={`environment-other-${index}`} object={scene} />
-      ))}
-      {frame.scene && <primitive object={frame.scene} />}
-      {roof.scene && <primitive object={roof.scene} />}
-      {stages.scene && <primitive object={stages.scene} />}
-    </>
-  );
-}
+  return (
+    <>
+      {otherScenes.map((scene, index) => (
+        <primitive key={`environment-other-${index}`} object={scene} />
+      ))}
+      {frame.scene && <primitive object={frame.scene} />}
+      {roof.scene && <primitive object={roof.scene} />}
+      {stages.scene && <primitive object={stages.scene} />}
+    </>
+  );
+}
+
+function MobileEnvironment() {
+  const road = useDracoGLTF('/models/environment/road.glb', DRACO_DECODER_CDN);
+  const sidewalk = useDracoGLTF('/models/environment/hq sidewalk 2.glb', DRACO_DECODER_CDN);
+  const transparentSidewalk = useDracoGLTF('/models/environment/transparents sidewalk.glb', DRACO_DECODER_CDN);
+
+  useEffect(() => {
+    const scenes = [road.scene, sidewalk.scene, transparentSidewalk.scene].filter(Boolean);
+    
+    scenes.forEach(scene => {
+      if (!scene) return;
+      makeFacesBehave(scene, true);
+
+      scene.traverse((child) => {
+        if ((child as THREE.Mesh).isMesh) {
+          const mesh = child as THREE.Mesh;
+          mesh.castShadow = false;
+          mesh.receiveShadow = false;
+          
+          if (mesh.material) {
+            const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+            materials.forEach((mat: any) => {
+              if (mat.normalMap) {
+                mat.normalMap.dispose();
+                mat.normalMap = null;
+              }
+              if (mat.roughnessMap) {
+                mat.roughnessMap.dispose();
+                mat.roughnessMap = null;
+              }
+              mat.needsUpdate = true;
+            });
+          }
+        }
+      });
+    });
+  }, [road.scene, sidewalk.scene, transparentSidewalk.scene]);
+
+  return (
+    <>
+      {road.scene && <primitive object={road.scene} />}
+      {sidewalk.scene && <primitive object={sidewalk.scene} />}
+      {transparentSidewalk.scene && <primitive object={transparentSidewalk.scene} />}
+    </>
+  );
+}

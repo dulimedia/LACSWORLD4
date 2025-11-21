@@ -8,9 +8,11 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useGLBState, type GLBNodeInfo } from '../store/glbState';
 import { useExploreState } from '../store/exploreState';
-import { SELECTED_MATERIAL_CONFIG, HOVERED_MATERIAL_CONFIG } from '../config/ghostMaterialConfig';
+import { useFilterStore } from '../stores/useFilterStore';
+import { SELECTED_MATERIAL_CONFIG, HOVERED_MATERIAL_CONFIG, FILTER_HIGHLIGHT_CONFIG } from '../config/ghostMaterialConfig';
 import { logger } from '../utils/logger';
 import { PerfFlags } from '../perf/PerfFlags';
+import { MobileDiagnostics } from '../debug/mobileDiagnostics';
 
 interface GLBUnitProps {
   node: GLBNodeInfo;
@@ -23,14 +25,16 @@ const GLBUnit: React.FC<GLBUnitProps> = ({ node }) => {
   const groupRef = useRef<THREE.Group>(null);
   const originalMaterialsRef = useRef<Map<string, THREE.Material | THREE.Material[]>>(new Map());
   const fadeProgressRef = useRef(0);
-  const targetStateRef = useRef<'none' | 'selected' | 'hovered'>('none');
+  const targetStateRef = useRef<'none' | 'selected' | 'hovered' | 'filtered'>('none');
   
   const { selectedUnit, selectedBuilding, selectedFloor, hoveredUnit } = useGLBState();
   const { selectedUnitKey, hoveredUnitKey } = useExploreState();
+  const { isUnitActive } = useFilterStore();
   
   // Handle GLB loading errors gracefully
   if (error) {
     logger.warn('GLB', '⚠️', `Failed to load GLB: ${node.key}`);
+    MobileDiagnostics.error('glb', 'Failed to load GLB', { key: node.key, path: node.path });
     return null;
   }
 
@@ -42,8 +46,12 @@ const GLBUnit: React.FC<GLBUnitProps> = ({ node }) => {
           originalMaterialsRef.current.set(child.uuid, child.material);
         }
       });
+      MobileDiagnostics.log('glb', 'Cached original materials', {
+        node: node.key,
+        meshCount: originalMaterialsRef.current.size,
+      });
     }
-  }, [scene]);
+  }, [scene, node.key]);
   
   const { selectUnit, updateGLBObject } = useGLBState();
   const { setSelected } = useExploreState();
@@ -52,25 +60,29 @@ const GLBUnit: React.FC<GLBUnitProps> = ({ node }) => {
   useEffect(() => {
     if (groupRef.current && !node.isLoaded) {
       updateGLBObject(node.key, groupRef.current);
+      MobileDiagnostics.log('glb', 'Registered GLB group', { node: node.key });
     }
   }, [node.key, node.isLoaded, updateGLBObject]);
 
-  // Determine if this unit is selected or hovered
+  // Determine if this unit is selected, hovered, or filtered
   const isHovered = hoveredUnit === node.key && !selectedUnit;
   const isSelected = selectedUnit === node.unitName && 
                     selectedBuilding === node.building && 
                     selectedFloor === node.floor;
+  const isFiltered = isUnitActive(node.key) && !isSelected && !isHovered;
 
-  // Update target state when selection/hover changes
+  // Update target state when selection/hover/filter changes
   useEffect(() => {
     if (isSelected) {
       targetStateRef.current = 'selected';
     } else if (isHovered) {
       targetStateRef.current = 'hovered';
+    } else if (isFiltered) {
+      targetStateRef.current = 'filtered';
     } else {
       targetStateRef.current = 'none';
     }
-  }, [isSelected, isHovered]);
+  }, [isSelected, isHovered, isFiltered]);
 
   // Animate fade in/out with useFrame
   useFrame((state, delta) => {
@@ -119,6 +131,28 @@ const GLBUnit: React.FC<GLBUnitProps> = ({ node }) => {
             const mat = child.material as THREE.MeshStandardMaterial;
             mat.emissiveIntensity = HOVERED_MATERIAL_CONFIG.emissiveIntensity * fadeProgressRef.current;
             child.visible = true;
+          } else if (targetStateRef.current === 'filtered') {
+            if (!child.material || !(child.material as any).__isAnimatedMaterial) {
+              const filterMaterial = new THREE.MeshStandardMaterial({
+                color: FILTER_HIGHLIGHT_CONFIG.color,
+                emissive: FILTER_HIGHLIGHT_CONFIG.emissive,
+                emissiveIntensity: 0,
+                metalness: FILTER_HIGHLIGHT_CONFIG.metalness,
+                roughness: FILTER_HIGHLIGHT_CONFIG.roughness,
+                transparent: FILTER_HIGHLIGHT_CONFIG.transparent,
+                opacity: 0,
+              });
+              (filterMaterial as any).__isAnimatedMaterial = true;
+              child.material = filterMaterial;
+            }
+            const mat = child.material as THREE.MeshStandardMaterial;
+            mat.opacity = FILTER_HIGHLIGHT_CONFIG.opacity * fadeProgressRef.current;
+            
+            // Add pulsing effect for filter highlighting
+            const time = state.clock.elapsedTime;
+            const pulse = (Math.sin(time * 3.0) + 1.0) * 0.5; // 0 to 1
+            mat.emissiveIntensity = FILTER_HIGHLIGHT_CONFIG.emissiveIntensity * fadeProgressRef.current * (0.5 + pulse * 0.5);
+            child.visible = true;
           } else if (fadeProgressRef.current === 0 && originalMaterial) {
             child.material = originalMaterial;
             delete (child.material as any).__isAnimatedMaterial;
@@ -150,8 +184,12 @@ const GLBInitializer: React.FC = () => {
     // Initialize GLB nodes if not already done
     if (glbNodes.size === 0) {
       logger.log('LOADING', '🔧', 'GLBManager: Initializing GLB nodes...');
+      MobileDiagnostics.log('glb-manager', 'Initializing GLB nodes');
       initializeGLBNodes();
     } else {
+      MobileDiagnostics.log('glb-manager', 'GLB nodes already initialized', {
+        count: glbNodes.size,
+      });
     }
   }, [glbNodes.size, initializeGLBNodes]);
 
@@ -167,11 +205,17 @@ export const GLBManager: React.FC = () => {
     const allNodes = Array.from(glbNodes.values());
     
     if (!isMobile) {
+      MobileDiagnostics.log('glb-manager', 'Desktop load path', { total: allNodes.length });
       return allNodes; // Desktop: load all
     }
     
     // Mobile: load only first 10 units
-    return allNodes.slice(0, 10);
+    const limited = allNodes.slice(0, 10);
+    MobileDiagnostics.warn('glb-manager', 'Mobile load capped', {
+      total: allNodes.length,
+      rendering: limited.length,
+    });
+    return limited;
   }, [glbNodes, isMobile]);
   
   return (

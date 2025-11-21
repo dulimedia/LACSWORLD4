@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useThree } from '@react-three/fiber';
 import { PerfFlags } from './PerfFlags';
+import { MobileDiagnostics } from '../debug/mobileDiagnostics';
 
 export function useCanvasClamps() {
   const { gl, size, setDpr } = useThree();
@@ -14,10 +15,22 @@ export function useCanvasClamps() {
     setDpr(targetDpr);
     
     const pixels = size.width * size.height * targetDpr * targetDpr;
+    MobileDiagnostics.log('canvas', 'Canvas metrics', {
+      width: size.width,
+      height: size.height,
+      targetDpr,
+      pixels: Math.round(pixels),
+      maxCanvasPixels,
+    });
+
     if (pixels > maxCanvasPixels) {
       const scale = Math.sqrt(maxCanvasPixels / (size.width * size.height));
       const clampedDpr = Math.max(0.75, Math.min(targetDpr * scale, targetDpr));
-      console.log(`[MobileGuard] Clamping DPR from ${targetDpr} to ${clampedDpr} (pixels: ${pixels.toFixed(0)} > ${maxCanvasPixels})`);
+      MobileDiagnostics.warn('canvas', 'Clamping DPR', {
+        previous: targetDpr,
+        next: clampedDpr,
+        pixels: Math.round(pixels),
+      });
       setDpr(clampedDpr);
     }
   }, [gl, size, setDpr]);
@@ -28,7 +41,7 @@ export function useFrameGovernor() {
   
   useEffect(() => {
     if (!PerfFlags.isMobile) {
-      console.log('[FrameGovernor] Skipping on desktop');
+      MobileDiagnostics.log('frame', 'Skipping FrameGovernor on desktop');
       return;
     }
     
@@ -49,18 +62,21 @@ export function useFrameGovernor() {
       if (jankFrames >= 8 && shedStep.current < 3) {
         shedStep.current++;
         jankFrames = 0;
-        console.warn(`[FrameGovernor] Performance degradation detected (${jankFrames} janky frames), triggering stage ${shedStep.current}`);
+        MobileDiagnostics.warn('frame', 'Performance degradation detected', {
+          dt,
+          stage: shedStep.current,
+        });
         const ev = new CustomEvent('perf:degrade', { detail: shedStep.current });
         window.dispatchEvent(ev);
       }
     };
     
     raf = requestAnimationFrame(loop);
-    console.log('[FrameGovernor] Frame monitoring started');
+    MobileDiagnostics.log('frame', 'Frame monitoring started');
     
     return () => {
       cancelAnimationFrame(raf);
-      console.log('[FrameGovernor] Frame monitoring stopped');
+      MobileDiagnostics.log('frame', 'Frame monitoring stopped');
     };
   }, []);
 }
