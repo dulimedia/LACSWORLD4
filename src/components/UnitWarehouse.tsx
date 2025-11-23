@@ -615,30 +615,16 @@ const UnitWarehouseComponent: React.FC<UnitWarehouseProps> = ({
 
   const loadedModels = useMemo(() => loadedModelsRef.current, [loadedModelsRef]);
 
-  // CRITICAL FIX: Sequential loading with delays to prevent iOS memory spike
+  // DISABLED: useGLTF.preload() in loops violates React hook rules and causes crashes
+  // Calling useGLTF.preload() inside a loop creates race conditions and Suspense errors
+  // Models will load lazily on-demand when accessed by components
   useEffect(() => {
-    const preloadModels = async () => {
-      // Load environment models sequentially with 300ms delays (iOS needs breathing room)
-      for (let i = 0; i < allModels.length; i++) {
-        const path = allModels[i];
-        useGLTF.preload(assetUrl(`models/${path}`), DRACO_DECODER_CDN);
-        if (PerfFlags.isIOS && i < allModels.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 300));
-        }
-      }
-      
-      // Skip box models entirely on mobile (iOS crashes with 97 units)
-      if (!PerfFlags.isMobile) {
-        for (let i = 0; i < Math.min(boxFiles.length, 20); i++) {
-          const path = boxFiles[i];
-          useGLTF.preload(assetUrl(`models/${path}`), DRACO_DECODER_CDN);
-          await new Promise(resolve => setTimeout(resolve, 200));
-        }
-      }
-    };
-    
-    preloadModels();
-  }, [allModels, boxFiles]);
+    console.log('📦 UnitWarehouse: Preload disabled - models will load on-demand');
+    MobileDiagnostics.log('warehouse', 'Preload disabled for stability', {
+      totalModels: allModels.length + boxFiles.length,
+      strategy: 'lazy on-demand loading'
+    });
+  }, [allModels.length, boxFiles.length]);
 
   const handleModelLoad = useCallback((model: LoadedModel) => {
     loadedModelsRef.current.push(model);
@@ -854,6 +840,22 @@ const UnitWarehouseComponent: React.FC<UnitWarehouseProps> = ({
   }, [modelsLoaded, areBoxesLoaded]);
 
   const frameCounter = useRef(0);
+  const meshCacheRef = useRef<Map<string, Mesh>>(new Map());
+  const isMeshCacheFilled = useRef(false);
+
+  useEffect(() => {
+    if (loadedModels.length > 0 && !isMeshCacheFilled.current) {
+      meshCacheRef.current.clear();
+      loadedModels.forEach((model) => {
+        model.object.traverse((child: Object3D) => {
+          if (child instanceof Mesh && child.name) {
+            meshCacheRef.current.set(child.uuid, child);
+          }
+        });
+      });
+      isMeshCacheFilled.current = true;
+    }
+  }, [loadedModels]);
 
   useFrame((state) => {
     frameCounter.current++;
@@ -871,11 +873,10 @@ const UnitWarehouseComponent: React.FC<UnitWarehouseProps> = ({
 
     if (frameCounter.current % 3 !== 0) return;
 
-    if (false && boundingSphereData && loadedModels.length > 0) {
+    if (false && boundingSphereData && meshCacheRef.current.size > 0) {
       const cameraPosition = state.camera.position;
 
-      loadedModels.forEach((model) => {
-        model.object.traverse((child: Object3D) => {
+      meshCacheRef.current.forEach((child) => {
           if (child instanceof Mesh && child.userData.isOptimizable && child.material instanceof THREE.MeshStandardMaterial) {
             const objectPosition = new THREE.Vector3();
             child.getWorldPosition(objectPosition);
@@ -920,7 +921,6 @@ const UnitWarehouseComponent: React.FC<UnitWarehouseProps> = ({
 
             child.material.needsUpdate = true;
           }
-        });
       });
     }
   });

@@ -21,11 +21,26 @@ interface GLBUnitProps {
 const FADE_DURATION = 0.8;
 
 const GLBUnit: React.FC<GLBUnitProps> = ({ node }) => {
-  const { scene, error } = useGLTF(node.path);
+  let scene, error;
+  
+  try {
+    const result = useGLTF(node.path);
+    scene = result.scene;
+    error = result.error;
+  } catch (loadError) {
+    console.error('🚨 useGLTF crash for:', node.path, loadError);
+    MobileDiagnostics.error('glb', 'useGLTF crashed', { key: node.key, path: node.path, error: loadError });
+    return null;
+  }
+  
   const groupRef = useRef<THREE.Group>(null);
   const originalMaterialsRef = useRef<Map<string, THREE.Material | THREE.Material[]>>(new Map());
   const fadeProgressRef = useRef(0);
   const targetStateRef = useRef<'none' | 'selected' | 'hovered' | 'filtered'>('none');
+  
+  const selectedMaterialRef = useRef<THREE.MeshStandardMaterial>();
+  const hoveredMaterialsRef = useRef<Map<string, THREE.MeshStandardMaterial>>(new Map());
+  const filteredMaterialRef = useRef<THREE.MeshStandardMaterial>();
   
   const { selectedUnit, selectedBuilding, selectedFloor, hoveredUnit } = useGLBState();
   const { selectedUnitKey, hoveredUnitKey } = useExploreState();
@@ -103,8 +118,8 @@ const GLBUnit: React.FC<GLBUnitProps> = ({ node }) => {
           const originalMaterial = originalMaterialsRef.current.get(child.uuid);
           
           if (targetStateRef.current === 'selected') {
-            if (!child.material || !(child.material as any).__isAnimatedMaterial) {
-              const blueMaterial = new THREE.MeshStandardMaterial({
+            if (!selectedMaterialRef.current) {
+              selectedMaterialRef.current = new THREE.MeshStandardMaterial({
                 color: SELECTED_MATERIAL_CONFIG.color,
                 emissive: SELECTED_MATERIAL_CONFIG.emissive,
                 emissiveIntensity: 0,
@@ -113,8 +128,10 @@ const GLBUnit: React.FC<GLBUnitProps> = ({ node }) => {
                 transparent: true,
                 opacity: 0,
               });
-              (blueMaterial as any).__isAnimatedMaterial = true;
-              child.material = blueMaterial;
+            }
+            if (!child.material || !(child.material as any).__isAnimatedMaterial) {
+              (selectedMaterialRef.current as any).__isAnimatedMaterial = true;
+              child.material = selectedMaterialRef.current;
             }
             const mat = child.material as THREE.MeshStandardMaterial;
             mat.opacity = fadeProgressRef.current;
@@ -122,18 +139,22 @@ const GLBUnit: React.FC<GLBUnitProps> = ({ node }) => {
             child.visible = true;
           } else if (targetStateRef.current === 'hovered') {
             if (originalMaterial && (!child.material || !(child.material as any).__isAnimatedMaterial)) {
-              const hoveredMaterial = (originalMaterial as THREE.MeshStandardMaterial).clone();
-              hoveredMaterial.emissive = new THREE.Color(HOVERED_MATERIAL_CONFIG.emissive);
-              hoveredMaterial.emissiveIntensity = 0;
-              (hoveredMaterial as any).__isAnimatedMaterial = true;
-              child.material = hoveredMaterial;
+              if (!hoveredMaterialsRef.current.has(child.uuid)) {
+                const hoveredMaterial = (originalMaterial as THREE.MeshStandardMaterial).clone();
+                hoveredMaterial.emissive = new THREE.Color(HOVERED_MATERIAL_CONFIG.emissive);
+                hoveredMaterial.emissiveIntensity = 0;
+                hoveredMaterialsRef.current.set(child.uuid, hoveredMaterial);
+              }
+              const hoveredMat = hoveredMaterialsRef.current.get(child.uuid)!;
+              (hoveredMat as any).__isAnimatedMaterial = true;
+              child.material = hoveredMat;
             }
             const mat = child.material as THREE.MeshStandardMaterial;
             mat.emissiveIntensity = HOVERED_MATERIAL_CONFIG.emissiveIntensity * fadeProgressRef.current;
             child.visible = true;
           } else if (targetStateRef.current === 'filtered') {
-            if (!child.material || !(child.material as any).__isAnimatedMaterial) {
-              const filterMaterial = new THREE.MeshStandardMaterial({
+            if (!filteredMaterialRef.current) {
+              filteredMaterialRef.current = new THREE.MeshStandardMaterial({
                 color: FILTER_HIGHLIGHT_CONFIG.color,
                 emissive: FILTER_HIGHLIGHT_CONFIG.emissive,
                 emissiveIntensity: 0,
@@ -142,8 +163,10 @@ const GLBUnit: React.FC<GLBUnitProps> = ({ node }) => {
                 transparent: FILTER_HIGHLIGHT_CONFIG.transparent,
                 opacity: 0,
               });
-              (filterMaterial as any).__isAnimatedMaterial = true;
-              child.material = filterMaterial;
+            }
+            if (!child.material || !(child.material as any).__isAnimatedMaterial) {
+              (filteredMaterialRef.current as any).__isAnimatedMaterial = true;
+              child.material = filteredMaterialRef.current;
             }
             const mat = child.material as THREE.MeshStandardMaterial;
             mat.opacity = FILTER_HIGHLIGHT_CONFIG.opacity * fadeProgressRef.current;
@@ -163,15 +186,18 @@ const GLBUnit: React.FC<GLBUnitProps> = ({ node }) => {
     }
   });
 
-  // Clone the scene for instancing
-  const clonedScene = useMemo(() => {
-    const cloned = scene.clone();
-    return cloned;
-  }, [scene]);
+  useEffect(() => {
+    return () => {
+      selectedMaterialRef.current?.dispose();
+      hoveredMaterialsRef.current.forEach(mat => mat.dispose());
+      hoveredMaterialsRef.current.clear();
+      filteredMaterialRef.current?.dispose();
+    };
+  }, []);
 
   return (
     <group ref={groupRef}>
-      <primitive object={clonedScene} />
+      <primitive object={scene} />
     </group>
   );
 };
@@ -199,23 +225,33 @@ const GLBInitializer: React.FC = () => {
 export const GLBManager: React.FC = () => {
   const { glbNodes } = useGLBState();
   
-  // Mobile: Only load first 10 units initially to prevent crash
+  // Limit units based on device capabilities to reduce memory
   const isMobile = PerfFlags.isMobile;
   const nodesToRender = useMemo(() => {
     const allNodes = Array.from(glbNodes.values());
     
-    if (!isMobile) {
-      MobileDiagnostics.log('glb-manager', 'Desktop load path', { total: allNodes.length });
-      return allNodes; // Desktop: load all
+    if (isMobile) {
+      // Mobile: DISABLED - load 0 units to test if crash occurs before GLB loading
+      // If this fixes the crash, we know it's GLB-related; if not, it's Canvas/WebGL
+      const limited = allNodes.slice(0, 0);
+      console.log('📱 MOBILE: GLB units DISABLED for crash testing');
+      MobileDiagnostics.warn('glb-manager', 'Mobile GLB units disabled for testing', {
+        total: allNodes.length,
+        rendering: limited.length,
+        reason: 'Isolating crash source - Canvas vs GLB models'
+      });
+      return limited;
     }
     
-    // Mobile: load only first 10 units
-    const limited = allNodes.slice(0, 10);
-    MobileDiagnostics.warn('glb-manager', 'Mobile load capped', {
+    // Desktop: load ALL units for full functionality (selection + camera)
+    // Memory optimization via frustum culling instead of limiting units
+    console.log(`📦 Desktop: Loading all ${allNodes.length} units (frustum culling handles performance)`);
+    MobileDiagnostics.log('glb-manager', 'Desktop load full', { 
       total: allNodes.length,
-      rendering: limited.length,
+      rendering: allNodes.length,
+      optimization: 'frustum culling active'
     });
-    return limited;
+    return allNodes;
   }, [glbNodes, isMobile]);
   
   return (

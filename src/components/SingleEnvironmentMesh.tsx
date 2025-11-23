@@ -26,11 +26,13 @@ export function SingleEnvironmentMesh({ tier }: SingleEnvironmentMeshProps) {
   
   const isMobile = (tier === 'mobile-low');
 
+  console.log('🌍 SingleEnvironmentMesh - Tier:', tier, 'isMobile:', isMobile);
+
   if (isMobile) {
-    console.log('dY"? SingleEnvironmentMesh: mobile palms mode');
+    console.log('📱 MOBILE PATH: Loading lightweight environment (MobileEnvironment)');
     return <MobileEnvironment />;
   }
-  console.log('dY"? SingleEnvironmentMesh: desktop environment mode');
+  console.log('🖥️ DESKTOP PATH: Loading full environment (10 models, 11.5MB)');
   
   const accessory = useDracoGLTF('/models/environment/accessory concrete.glb');
   const hqSidewalk = useDracoGLTF('/models/environment/hq sidewalk 2.glb');
@@ -635,47 +637,52 @@ export function SingleEnvironmentMesh({ tier }: SingleEnvironmentMeshProps) {
 }
 
 function MobileEnvironment() {
+  // ULTRA-MINIMAL: Only load road model (1MB) to prevent memory crash
+  // Previously loaded 3 models (1.3MB) - still too much for iOS
   const road = useDracoGLTF('/models/environment/road.glb', DRACO_DECODER_CDN);
-  const sidewalk = useDracoGLTF('/models/environment/hq sidewalk 2.glb', DRACO_DECODER_CDN);
-  const transparentSidewalk = useDracoGLTF('/models/environment/transparents sidewalk.glb', DRACO_DECODER_CDN);
+  
+  console.log('📱 MobileEnvironment: Loading ONLY road.glb (1MB) for stability');
 
   useEffect(() => {
-    const scenes = [road.scene, sidewalk.scene, transparentSidewalk.scene].filter(Boolean);
+    if (!road.scene) return;
     
-    scenes.forEach(scene => {
-      if (!scene) return;
-      makeFacesBehave(scene, true);
+    console.log('📱 MobileEnvironment: road.glb loaded, optimizing...');
+    makeFacesBehave(road.scene, true);
 
-      scene.traverse((child) => {
-        if ((child as THREE.Mesh).isMesh) {
-          const mesh = child as THREE.Mesh;
-          mesh.castShadow = false;
-          mesh.receiveShadow = false;
-          
-          if (mesh.material) {
-            const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-            materials.forEach((mat: any) => {
-              if (mat.normalMap) {
-                mat.normalMap.dispose();
-                mat.normalMap = null;
-              }
-              if (mat.roughnessMap) {
-                mat.roughnessMap.dispose();
-                mat.roughnessMap = null;
-              }
-              mat.needsUpdate = true;
-            });
-          }
+    road.scene.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh) {
+        const mesh = child as THREE.Mesh;
+        mesh.castShadow = false;
+        mesh.receiveShadow = false;
+        
+        if (mesh.material) {
+          const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+          materials.forEach((mat: any) => {
+            // Remove memory-heavy texture maps
+            if (mat.normalMap) {
+              mat.normalMap.dispose();
+              mat.normalMap = null;
+            }
+            if (mat.roughnessMap) {
+              mat.roughnessMap.dispose();
+              mat.roughnessMap = null;
+            }
+            if (mat.metalnessMap) {
+              mat.metalnessMap.dispose();
+              mat.metalnessMap = null;
+            }
+            mat.needsUpdate = true;
+          });
         }
-      });
+      }
     });
-  }, [road.scene, sidewalk.scene, transparentSidewalk.scene]);
+    
+    console.log('✅ MobileEnvironment: road.glb optimized and ready');
+  }, [road.scene]);
 
   return (
     <>
       {road.scene && <primitive object={road.scene} />}
-      {sidewalk.scene && <primitive object={sidewalk.scene} />}
-      {transparentSidewalk.scene && <primitive object={transparentSidewalk.scene} />}
     </>
   );
 }

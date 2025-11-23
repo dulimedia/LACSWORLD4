@@ -20,15 +20,68 @@ export type RootCanvasProps = Omit<CanvasProps, 'children' | 'gl' | 'dpr'> & {
 
 function Fallback({ reason }: { reason?: string }) {
   return (
-    <div className="absolute inset-0 grid place-items-center bg-slate-100">
-      <div className="text-center px-6">
-        <p className="font-medium mb-2">Interactive 3D view unavailable.</p>
-        {reason && <p className="text-xs text-slate-600 max-w-md">{reason}</p>}
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: '#dc2626',
+      color: 'white',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 999999,
+      padding: '20px',
+      fontFamily: 'system-ui, -apple-system, sans-serif'
+    }}>
+      <div style={{ 
+        background: 'rgba(0,0,0,0.2)', 
+        padding: '30px', 
+        borderRadius: '12px',
+        maxWidth: '500px',
+        textAlign: 'center'
+      }}>
+        <h1 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '15px' }}>
+          🚨 3D Scene Crashed
+        </h1>
+        <p style={{ fontSize: '16px', marginBottom: '20px', lineHeight: '1.5' }}>
+          The WebGL canvas failed to initialize or encountered a critical error.
+        </p>
+        {reason && (
+          <div style={{
+            background: 'rgba(0,0,0,0.3)',
+            padding: '15px',
+            borderRadius: '8px',
+            marginBottom: '20px',
+            fontFamily: 'monospace',
+            fontSize: '12px',
+            wordBreak: 'break-word',
+            textAlign: 'left',
+            maxHeight: '150px',
+            overflow: 'auto'
+          }}>
+            {reason}
+          </div>
+        )}
         <button 
-          className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition" 
+          style={{
+            padding: '12px 24px',
+            fontSize: '16px',
+            fontWeight: 'bold',
+            backgroundColor: 'white',
+            color: '#dc2626',
+            border: 'none',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            transition: 'transform 0.2s'
+          }}
           onClick={() => location.reload()}
+          onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+          onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
         >
-          Retry
+          Reload Page
         </button>
       </div>
     </div>
@@ -37,10 +90,21 @@ function Fallback({ reason }: { reason?: string }) {
 
 class CanvasErrorBoundary extends Component<any, { err?: any }> {
   state = { err: undefined };
-  componentDidCatch(err: any) {
+  componentDidCatch(err: any, errorInfo: any) {
     this.setState({ err });
+    console.error('🚨🚨🚨 CANVAS ERROR BOUNDARY TRIGGERED 🚨🚨🚨');
+    console.error('Error:', err);
+    console.error('Error message:', err?.message);
+    console.error('Error stack:', err?.stack);
+    console.error('Component stack:', errorInfo?.componentStack);
     log.err('CanvasErrorBoundary caught error', err);
-    MobileDiagnostics.error('root-canvas', 'Canvas error boundary triggered', { message: String(err) });
+    MobileDiagnostics.error('root-canvas', 'Canvas error boundary triggered', { 
+      message: String(err?.message || err),
+      stack: err?.stack,
+      componentStack: errorInfo?.componentStack
+    });
+    
+    alert(`CANVAS CRASH: ${err?.message || err}`);
   }
   render() {
     return this.state.err ? <Fallback reason={String(this.state.err)} /> : this.props.children;

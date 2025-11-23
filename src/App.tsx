@@ -2,9 +2,11 @@ import React, { useEffect, useRef, useCallback, useState, useMemo } from 'react'
 import ReactDOM from 'react-dom';
 import { useThree } from '@react-three/fiber';
 import * as THREE from 'three';
-import { CameraControls, Environment } from '@react-three/drei';
+import { CameraControls, Environment, useGLTF } from '@react-three/drei';
 import { detectDevice, getMobileOptimizedSettings } from './utils/deviceDetection';
 import { MobileMemoryManager } from './utils/memoryManager';
+import { PerfFlags } from './perf/PerfFlags';
+import { UNIT_BOX_GLB_FILES } from './data/unitBoxGlbFiles';
 import { RotateCcw, RotateCw, ZoomIn, ZoomOut, Home } from 'lucide-react';
 import { assetUrl } from './lib/assets';
 import { UnitWarehouse } from './components/UnitWarehouse';
@@ -13,6 +15,7 @@ import UnitDetailPopup from './components/UnitDetailPopup';
 import { ExploreUnitsPanel } from './ui/ExploreUnitsPanel';
 import Sidebar from './ui/Sidebar/Sidebar';
 import { GLBManager } from './components/GLBManager';
+import { FrustumCuller } from './components/FrustumCuller';
 import { UnitDetailsPopup } from './components/UnitDetailsPopup';
 import { SelectedUnitOverlay } from './components/SelectedUnitOverlay';
 import { CanvasClickHandler } from './components/CanvasClickHandler';
@@ -49,7 +52,6 @@ import { logger } from './utils/logger';
 import { RootCanvas } from './ui/RootCanvas';
 import type { Tier } from './lib/graphics/tier';
 import { ErrorLogDisplay } from './components/ErrorLogDisplay';
-import { PerfFlags } from './perf/PerfFlags';
 import { PerformanceGovernorComponent } from './components/PerformanceGovernorComponent';
 import { log as debugLog, SAFE, Q } from './lib/debug';
 import { MobileDiagnostics } from './debug/mobileDiagnostics';
@@ -383,6 +385,7 @@ const DetailsSidebar: React.FC<{
 
 function App() {
   const [canvasReady, setCanvasReady] = useState(false);
+  const [errorLog, setErrorLog] = useState<string[]>([]);
   const [scenePolicy] = useState(() => {
     const param = Q.get('scene');
     const enabled = param === '0' ? false : true;
@@ -470,6 +473,55 @@ function App() {
   // Camera controls ref for navigation
   const orbitControlsRef = useRef<CameraControls>(null);
   
+  // DISABLED: Preload loop was causing React hook violations and crashes
+  // Calling useGLTF.preload() 10 times in a loop triggered Suspense issues
+  // Will implement sequential lazy loading after Canvas mounts
+  useEffect(() => {
+    const isMobile = PerfFlags.isMobile;
+    if (isMobile) {
+      console.log('📦 GLB preload disabled for mobile - will load lazily');
+    }
+  }, []);
+  
+  // Add global error handler for mobile crashes with visible overlay
+  useEffect(() => {
+    const isMobile = PerfFlags.isMobile;
+    
+    const errorHandler = (event: ErrorEvent) => {
+      const msg = `${event.message} at ${event.filename}:${event.lineno}:${event.colno}`;
+      console.error('🚨 GLOBAL ERROR:', event.error);
+      console.error('🚨 Message:', event.message);
+      console.error('🚨 Filename:', event.filename);
+      console.error('🚨 Line:', event.lineno, 'Col:', event.colno);
+      setErrorLog(prev => [...prev, msg]);
+    };
+    
+    const rejectionHandler = (event: PromiseRejectionEvent) => {
+      const msg = `Promise rejected: ${event.reason}`;
+      console.error('🚨 UNHANDLED PROMISE REJECTION:', event.reason);
+      setErrorLog(prev => [...prev, msg]);
+    };
+    
+    if (isMobile) {
+      console.log('📱 MOBILE DEVICE DETECTED - Enhanced logging enabled');
+      console.log('📱 Device info:', {
+        isIOS: PerfFlags.isIOS,
+        userAgent: navigator.userAgent,
+        memory: (navigator as any).deviceMemory || 'unknown',
+        hardwareConcurrency: navigator.hardwareConcurrency || 'unknown',
+        maxTouchPoints: navigator.maxTouchPoints || 'unknown'
+      });
+    }
+    
+    window.addEventListener('error', errorHandler);
+    window.addEventListener('unhandledrejection', rejectionHandler);
+    
+    return () => {
+      window.removeEventListener('error', errorHandler);
+      window.removeEventListener('unhandledrejection', rejectionHandler);
+    };
+  }, []);
+  
   // CRITICAL FIX: Delay Canvas mount by 3000ms to let page load settle (iOS requires this)
   useEffect(() => {
     const delay = PerfFlags.isIOS ? 3000 : 500; // 3 seconds for iOS to fully settle
@@ -535,11 +587,11 @@ function App() {
       // Add iOS low memory warning handler
       if (deviceCapabilities.isIOS) {
         const handleLowMemory = () => {
+          console.error('🚨 iOS LOW MEMORY WARNING - Running cleanup (NO AUTO-RELOAD)');
           memoryManager.aggressiveCleanup();
-          // Force reload of essential resources only
-          setTimeout(() => {
-            window.location.reload();
-          }, 1000);
+          // REMOVED: window.location.reload() - Was causing infinite crash loop
+          // Let user manually reload if needed
+          alert('Low memory detected. Please close other apps or reload manually.');
         };
         
         // Listen for low memory events (iOS specific)
@@ -650,24 +702,22 @@ function App() {
   useEffect(() => {
     const handleContextLost = (event: Event) => {
       event.preventDefault();
-      logger.error('WebGL context lost - GPU memory overload. Reloading page...');
+      console.error('🚨 WebGL context lost - GPU memory overload (NO AUTO-RELOAD)');
+      logger.error('WebGL context lost - GPU memory overload');
       
-      // Show user-friendly message
+      // REMOVED: window.location.reload() - Was causing infinite crash loop
+      // Let user manually reload if needed
+      alert('WebGL context lost. GPU memory overload. Please reload the page manually.');
+      
       setModelsLoading(true);
       setLoadingPhase('initializing');
-      
-      // Force reload after brief delay
-      setTimeout(() => {
-        window.location.reload();
-      }, 2000);
     };
 
     const handleContextRestored = () => {
+      console.log('✅ WebGL context restored (NO AUTO-RELOAD)');
       logger.log('LOADING', '✅', 'WebGL context restored');
-      // Reload to ensure clean state
-      setTimeout(() => {
-        window.location.reload();
-      }, 500);
+      // REMOVED: window.location.reload() - Was causing infinite crash loop
+      alert('WebGL context restored. Page may need manual reload for clean state.');
     };
 
     const canvas = document.querySelector('canvas');
@@ -1126,6 +1176,37 @@ function App() {
         document.body
       )}
 
+      {/* Visible Error Overlay - Always on top */}
+      {errorLog.length > 0 && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          background: '#dc2626',
+          color: 'white',
+          padding: '10px 20px',
+          zIndex: 999999,
+          fontSize: '14px',
+          fontFamily: 'monospace',
+          maxHeight: '200px',
+          overflow: 'auto',
+          boxShadow: '0 4px 6px rgba(0,0,0,0.3)'
+        }}>
+          <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>
+            🚨 ERRORS DETECTED ({errorLog.length})
+          </div>
+          {errorLog.map((err, i) => (
+            <div key={i} style={{ 
+              padding: '5px 0', 
+              borderBottom: i < errorLog.length - 1 ? '1px solid rgba(255,255,255,0.3)' : 'none'
+            }}>
+              {err}
+            </div>
+          ))}
+        </div>
+      )}
+
       <div className="app-viewport">
         <div className="app-layout">
           <div 
@@ -1226,6 +1307,9 @@ function App() {
 
               {/* GLB Manager for unit highlighting and interaction */}
               <GLBManager />
+              
+              {/* Frustum Culling for performance - only render visible objects */}
+              <FrustumCuller />
 
               {/* Selected Unit Highlight Overlay - simplified for low power devices */}
               {!deviceCapabilities.isLowPowerDevice && <SelectedUnitOverlay />}

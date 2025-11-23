@@ -70,6 +70,19 @@ export class StreamingGLTFLoader {
         this.inFlight++;
         const url = this.queue.shift()!;
         
+        // Check memory before loading on mobile
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        if (isMobile && (window.performance as any).memory) {
+          const memInfo = (window.performance as any).memory;
+          const memoryUsage = memInfo.usedJSHeapSize / memInfo.jsHeapSizeLimit;
+          if (memoryUsage > 0.6) {
+            console.warn(`⚠️ Memory usage high (${(memoryUsage * 100).toFixed(1)}%), skipping model: ${url}`);
+            this.inFlight--;
+            setTimeout(() => processNext(), this.delayBetweenLoads);
+            return;
+          }
+        }
+        
         this.loader.load(
           url,
           (gltf) => {
@@ -115,6 +128,15 @@ export class StreamingGLTFLoader {
   }
 
   async loadSingle(url: string): Promise<any> {
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (isMobile && (window.performance as any).memory) {
+      const memInfo = (window.performance as any).memory;
+      const memoryUsage = memInfo.usedJSHeapSize / memInfo.jsHeapSizeLimit;
+      if (memoryUsage > 0.6) {
+        throw new Error(`Memory usage too high (${(memoryUsage * 100).toFixed(1)}%) to load: ${url}`);
+      }
+    }
+    
     return new Promise((resolve, reject) => {
       this.loader.load(
         url,

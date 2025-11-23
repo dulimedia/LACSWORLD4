@@ -51,21 +51,28 @@ class CsvDataCache {
       finalUrl = url + cacheBuster;
     }
     
-    const response = await fetch(finalUrl, { 
-      cache: 'no-store',
-      headers: {
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache'
-      }
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    
+    try {
+      const response = await fetch(finalUrl, { 
+        signal: controller.signal,
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
+        }
+      });
+      
+      clearTimeout(timeoutId);
     
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     
-    const csvText = await response.text();
-    
-    return new Promise((resolve, reject) => {
+      const csvText = await response.text();
+      
+      return new Promise((resolve, reject) => {
       Papa.parse(csvText, {
         header: true,
         skipEmptyLines: true,
@@ -140,6 +147,13 @@ class CsvDataCache {
         },
       });
     });
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error('CSV fetch timeout after 15 seconds');
+      }
+      throw error;
+    }
   }
 }
 

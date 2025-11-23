@@ -37,13 +37,17 @@ export class MobileMemoryManager {
     if (perf && perf.memory) {
       const memoryUsage = perf.memory.usedJSHeapSize / perf.memory.jsHeapSizeLimit;
       
-      // If memory usage is above 70%, start aggressive cleanup
-      if (memoryUsage > 0.7) {
-        console.warn('High memory usage detected, cleaning up...');
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      const aggressiveThreshold = isIOS ? 0.55 : 0.70;
+      const gentleThreshold = isIOS ? 0.45 : 0.50;
+      
+      // If memory usage is above threshold, start aggressive cleanup
+      if (memoryUsage > aggressiveThreshold) {
+        console.warn(`High memory usage detected (${(memoryUsage * 100).toFixed(1)}%), cleaning up...`);
         this.aggressiveCleanup();
       }
-      // If memory usage is above 50%, do gentle cleanup
-      else if (memoryUsage > 0.5) {
+      // If memory usage is above gentle threshold, do gentle cleanup
+      else if (memoryUsage > gentleThreshold) {
         this.gentleCleanup();
       }
     }
@@ -127,7 +131,7 @@ export const iOSSafariOptimizations = {
       alpha: false,
       antialias: false,
       depth: true,
-      failIfMajorPerformanceCaveat: true,
+      failIfMajorPerformanceCaveat: false,
       powerPreference: 'low-power' as WebGLPowerPreference,
       premultipliedAlpha: false,
       preserveDrawingBuffer: false,

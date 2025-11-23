@@ -20,6 +20,12 @@ export function PathTracer({
   renderScale = 1,
   tiles = { x: 2, y: 2 },
 }: PathTracerProps) {
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  
+  if (isMobile) {
+    return null;
+  }
+  
   const { gl, scene, camera } = useThree();
   const pathTracerRef = useRef<WebGLPathTracer | null>(null);
   const [isReady, setIsReady] = useState(false);
