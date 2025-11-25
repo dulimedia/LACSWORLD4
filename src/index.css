@@ -131,7 +131,10 @@ body {
 
 .scene-shell {
   position: absolute;
-  inset: 0;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
   overflow: hidden;
 }
 
@@ -152,57 +155,73 @@ body {
   display: block;
   width: 100%;
   height: 100%;
-  touch-action: none;
+  touch-action: pan-x pan-y pinch-zoom;
 }
 
-/* Mobile drawer open - shift canvas up without resizing */
+/* Mobile: 3D scene stays full screen, sidebar overlays on top */
 @media (max-width: 768px) {
-  body.sidebar-open .scene-shell {
-    bottom: 45vh;
-    transition: bottom 300ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  .scene-shell {
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
   }
 }
 
 
 /* CSS Variables for scene positioning */
 :root {
-  --scene-offset: 0px;
+  --sidebar-width: 18px;
   --scene-left: 18px;
-  --scene-right: 0px;
   --scene-width: calc(100vw - 18px);
 }
 
 body.sidebar-open {
-  --scene-offset: 420px;
-  --scene-left: 420px;
-  --scene-right: 0px;
-  --scene-width: calc(100vw - 420px);
+  --sidebar-width: clamp(320px, 28vw, 420px);
+  --scene-left: clamp(320px, 28vw, 420px);
+  --scene-width: calc(100vw - clamp(320px, 28vw, 420px));
 }
 
 body.sidebar-open.floorplan-expanded {
-  --scene-offset: 840px;
-  --scene-left: 840px;
-  --scene-right: 0px;
-  --scene-width: calc(100vw - 840px);
+  --sidebar-width: clamp(640px, 56vw, 840px);
+  --scene-left: clamp(640px, 56vw, 840px);
+  --scene-width: calc(100vw - clamp(640px, 56vw, 840px));
 }
 
-/* Desktop - 3D scene positioning to match sidebar states */
+/* Desktop: Shift scene-shell to accommodate sidebar */
 @media (min-width: 769px) {
   .scene-shell {
     left: var(--scene-left);
-    right: var(--scene-right);
-    transform: none;
+    right: 0;
     transition: left 300ms cubic-bezier(0.2, 0.8, 0.2, 1);
-    will-change: left;
-    contain: layout style paint;
+  }
+  
+  /* Camera controls centered relative to canvas area (not screen) */
+  .camera-controls-desktop {
+    left: calc(var(--scene-left) + (100vw - var(--scene-left)) / 2);
+    transition: left 300ms cubic-bezier(0.2, 0.8, 0.2, 1);
   }
 }
 
-/* Camera controls centered on scene (not screen) */
-@media (min-width: 769px) {
-  .camera-controls-desktop {
-    left: calc(var(--scene-left) + var(--scene-width) / 2);
-    transition: transform 300ms cubic-bezier(0.2, 0.8, 0.2, 1);
+/* Mobile: Ensure 3D scene always fills entire screen */
+@media (max-width: 768px) {
+  .app-viewport,
+  .app-layout,
+  .scene-shell {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+  }
+  
+  body.sidebar-open .scene-shell {
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
   }
 }
 

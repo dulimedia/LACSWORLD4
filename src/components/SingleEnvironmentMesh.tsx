@@ -1,5 +1,5 @@
 import { useGLTF } from '@react-three/drei';
-import { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import * as THREE from 'three';
 import { makeFacesBehave } from '../utils/makeFacesBehave';
 import { fixInvertedFacesSelective } from '../utils/fixInvertedFacesSelective';
@@ -637,19 +637,112 @@ export function SingleEnvironmentMesh({ tier }: SingleEnvironmentMeshProps) {
 }
 
 function MobileEnvironment() {
-  // ULTRA-MINIMAL: Only load road model (1MB) to prevent memory crash
-  // Previously loaded 3 models (1.3MB) - still too much for iOS
-  const road = useDracoGLTF('/models/environment/road.glb', DRACO_DECODER_CDN);
+  const [loadStage, setLoadStage] = React.useState(0);
+  const progressEmitted = React.useRef<Set<number>>(new Set());
+  const mobilePhaseDispatch = React.useRef({ completed: false });
   
-  console.log('📱 MobileEnvironment: Loading ONLY road.glb (1MB) for stability');
+  console.log('📱 MobileEnvironment: Progressive loading - Stage', loadStage);
+  
+  // Load models progressively to avoid memory spike
+  // Stage 0: Essential (road + sidewalk)
+  const road = loadStage >= 0 ? useDracoGLTF('/models/environment/road.glb', DRACO_DECODER_CDN) : { scene: null };
+  const hqSidewalk = loadStage >= 0 ? useDracoGLTF('/models/environment/hq sidewalk 2.glb', DRACO_DECODER_CDN) : { scene: null };
+  
+  // Stage 1: Lightweight structures (white wall + transparent sidewalk + transparent buildings)
+  const whiteWall = loadStage >= 1 ? useDracoGLTF('/models/environment/white wall.glb', DRACO_DECODER_CDN) : { scene: null };
+  const transparentSidewalk = loadStage >= 1 ? useDracoGLTF('/models/environment/transparents sidewalk.glb', DRACO_DECODER_CDN) : { scene: null };
+  const transparentBuildings = loadStage >= 1 ? useDracoGLTF('/models/environment/transparent buildings.glb', DRACO_DECODER_CDN) : { scene: null };
+  
+  // Stage 2: Medium (accessory + frame)
+  const accessory = loadStage >= 2 ? useDracoGLTF('/models/environment/accessory concrete.glb', DRACO_DECODER_CDN) : { scene: null };
+  const frame = loadStage >= 2 ? useDracoGLTF('/models/environment/frame-raw-14.glb', DRACO_DECODER_CDN) : { scene: null };
+  
+  // Stage 3: Heavy models one at a time (palms)
+  const palms = loadStage >= 3 ? useDracoGLTF('/models/environment/palms.glb', DRACO_DECODER_CDN) : { scene: null };
+  
+  // Stage 4: stages.glb
+  const stages = loadStage >= 4 ? useDracoGLTF('/models/environment/stages.glb', DRACO_DECODER_CDN) : { scene: null };
+  
+  // Stage 5: Heaviest last (roof and walls)
+  const roof = loadStage >= 5 ? useDracoGLTF('/models/environment/roof and walls.glb', DRACO_DECODER_CDN) : { scene: null };
 
-  useEffect(() => {
-    if (!road.scene) return;
+  React.useEffect(() => {
+    if (loadStage === 0 && road.scene && hqSidewalk.scene && !progressEmitted.current.has(0)) {
+      progressEmitted.current.add(0);
+      window.dispatchEvent(new CustomEvent('mobile-loading-update', {
+        detail: { phase: 'stage-0', progress: 16, message: 'Loading road & sidewalk...' }
+      }));
+    }
+  }, [road.scene, hqSidewalk.scene, loadStage]);
+
+  React.useEffect(() => {
+    if (loadStage === 1 && whiteWall.scene && transparentSidewalk.scene && transparentBuildings.scene && !progressEmitted.current.has(1)) {
+      progressEmitted.current.add(1);
+      window.dispatchEvent(new CustomEvent('mobile-loading-update', {
+        detail: { phase: 'stage-1', progress: 33, message: 'Loading structures...' }
+      }));
+    }
+  }, [whiteWall.scene, transparentSidewalk.scene, transparentBuildings.scene, loadStage]);
+
+  React.useEffect(() => {
+    if (loadStage === 2 && accessory.scene && frame.scene && !progressEmitted.current.has(2)) {
+      progressEmitted.current.add(2);
+      window.dispatchEvent(new CustomEvent('mobile-loading-update', {
+        detail: { phase: 'stage-2', progress: 50, message: 'Loading building frame...' }
+      }));
+    }
+  }, [accessory.scene, frame.scene, loadStage]);
+
+  React.useEffect(() => {
+    if (loadStage === 3 && palms.scene && !progressEmitted.current.has(3)) {
+      progressEmitted.current.add(3);
+      window.dispatchEvent(new CustomEvent('mobile-loading-update', {
+        detail: { phase: 'stage-3', progress: 66, message: 'Loading vegetation...' }
+      }));
+    }
+  }, [palms.scene, loadStage]);
+
+  React.useEffect(() => {
+    if (loadStage === 4 && stages.scene && !progressEmitted.current.has(4)) {
+      progressEmitted.current.add(4);
+      window.dispatchEvent(new CustomEvent('mobile-loading-update', {
+        detail: { phase: 'stage-4', progress: 83, message: 'Loading stages...' }
+      }));
+    }
+  }, [stages.scene, loadStage]);
+
+  React.useEffect(() => {
+    if (loadStage === 5 && roof.scene && !progressEmitted.current.has(5)) {
+      progressEmitted.current.add(5);
+      window.dispatchEvent(new CustomEvent('mobile-loading-update', {
+        detail: { phase: 'stage-5', progress: 95, message: 'Loading roof & walls...' }
+      }));
+      
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('mobile-loading-complete', {
+          detail: { phase: 'complete', progress: 100, message: 'Environment ready!' }
+        }));
+      }, 500);
+    }
+  }, [roof.scene, loadStage]);
+  
+  // Progress through loading stages with delays
+  React.useEffect(() => {
+    if (loadStage < 5) {
+      const timer = setTimeout(() => {
+        console.log('📱 Advancing to stage', loadStage + 1);
+        setLoadStage(loadStage + 1);
+      }, 800); // 800ms delay between stages
+      return () => clearTimeout(timer);
+    }
+  }, [loadStage]);
+
+  const optimizeModel = (scene: THREE.Object3D) => {
+    if (!scene) return;
     
-    console.log('📱 MobileEnvironment: road.glb loaded, optimizing...');
-    makeFacesBehave(road.scene, true);
+    makeFacesBehave(scene, true);
 
-    road.scene.traverse((child) => {
+    scene.traverse((child) => {
       if ((child as THREE.Mesh).isMesh) {
         const mesh = child as THREE.Mesh;
         mesh.castShadow = false;
@@ -658,7 +751,6 @@ function MobileEnvironment() {
         if (mesh.material) {
           const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
           materials.forEach((mat: any) => {
-            // Remove memory-heavy texture maps
             if (mat.normalMap) {
               mat.normalMap.dispose();
               mat.normalMap = null;
@@ -671,18 +763,66 @@ function MobileEnvironment() {
               mat.metalnessMap.dispose();
               mat.metalnessMap = null;
             }
+            mat.envMapIntensity = 0.8;
             mat.needsUpdate = true;
           });
         }
       }
     });
-    
-    console.log('✅ MobileEnvironment: road.glb optimized and ready');
+  };
+
+  useEffect(() => {
+    if (road.scene) optimizeModel(road.scene);
   }, [road.scene]);
+
+  useEffect(() => {
+    if (hqSidewalk.scene) optimizeModel(hqSidewalk.scene);
+  }, [hqSidewalk.scene]);
+
+  useEffect(() => {
+    if (roof.scene) optimizeModel(roof.scene);
+  }, [roof.scene]);
+
+  useEffect(() => {
+    if (whiteWall.scene) optimizeModel(whiteWall.scene);
+  }, [whiteWall.scene]);
+
+  useEffect(() => {
+    if (frame.scene) optimizeModel(frame.scene);
+  }, [frame.scene]);
+
+  useEffect(() => {
+    if (stages.scene) optimizeModel(stages.scene);
+  }, [stages.scene]);
+
+  useEffect(() => {
+    if (transparentSidewalk.scene) optimizeModel(transparentSidewalk.scene);
+  }, [transparentSidewalk.scene]);
+
+  useEffect(() => {
+    if (transparentBuildings.scene) optimizeModel(transparentBuildings.scene);
+  }, [transparentBuildings.scene]);
+
+  useEffect(() => {
+    if (accessory.scene) optimizeModel(accessory.scene);
+  }, [accessory.scene]);
+
+  useEffect(() => {
+    if (palms.scene) optimizeModel(palms.scene);
+  }, [palms.scene]);
 
   return (
     <>
       {road.scene && <primitive object={road.scene} />}
+      {hqSidewalk.scene && <primitive object={hqSidewalk.scene} />}
+      {roof.scene && <primitive object={roof.scene} />}
+      {whiteWall.scene && <primitive object={whiteWall.scene} />}
+      {frame.scene && <primitive object={frame.scene} />}
+      {stages.scene && <primitive object={stages.scene} />}
+      {transparentSidewalk.scene && <primitive object={transparentSidewalk.scene} />}
+      {transparentBuildings.scene && <primitive object={transparentBuildings.scene} />}
+      {accessory.scene && <primitive object={accessory.scene} />}
+      {palms.scene && <primitive object={palms.scene} />}
     </>
   );
 }

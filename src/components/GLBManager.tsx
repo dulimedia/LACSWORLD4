@@ -20,7 +20,23 @@ interface GLBUnitProps {
 
 const FADE_DURATION = 0.8;
 
-const GLBUnit: React.FC<GLBUnitProps> = ({ node }) => {
+const GLBUnit: React.FC<GLBUnitProps> = React.memo(({ node }) => {
+  const { selectedUnit, selectedBuilding, selectedFloor, hoveredUnit } = useGLBState();
+  const { selectedUnitKey, hoveredUnitKey } = useExploreState();
+  const { isUnitActive } = useFilterStore();
+  
+  const isHovered = hoveredUnit === node.key && !selectedUnit;
+  const isSelected = selectedUnit === node.unitName && 
+                    selectedBuilding === node.building && 
+                    selectedFloor === node.floor;
+  const isFiltered = isUnitActive(node.key) && !isSelected && !isHovered;
+  
+  const shouldLoad = isSelected || isHovered || isFiltered;
+  
+  if (!shouldLoad) {
+    return null;
+  }
+  
   let scene, error;
   
   try {
@@ -41,19 +57,13 @@ const GLBUnit: React.FC<GLBUnitProps> = ({ node }) => {
   const selectedMaterialRef = useRef<THREE.MeshStandardMaterial>();
   const hoveredMaterialsRef = useRef<Map<string, THREE.MeshStandardMaterial>>(new Map());
   const filteredMaterialRef = useRef<THREE.MeshStandardMaterial>();
-  
-  const { selectedUnit, selectedBuilding, selectedFloor, hoveredUnit } = useGLBState();
-  const { selectedUnitKey, hoveredUnitKey } = useExploreState();
-  const { isUnitActive } = useFilterStore();
-  
-  // Handle GLB loading errors gracefully
+
   if (error) {
     logger.warn('GLB', '⚠️', `Failed to load GLB: ${node.key}`);
     MobileDiagnostics.error('glb', 'Failed to load GLB', { key: node.key, path: node.path });
     return null;
   }
 
-  // Store original materials on first load
   useEffect(() => {
     if (scene && originalMaterialsRef.current.size === 0) {
       scene.traverse((child) => {
@@ -71,7 +81,6 @@ const GLBUnit: React.FC<GLBUnitProps> = ({ node }) => {
   const { selectUnit, updateGLBObject } = useGLBState();
   const { setSelected } = useExploreState();
   
-  // Update the GLB state store with the loaded object
   useEffect(() => {
     if (groupRef.current && !node.isLoaded) {
       updateGLBObject(node.key, groupRef.current);
@@ -79,14 +88,6 @@ const GLBUnit: React.FC<GLBUnitProps> = ({ node }) => {
     }
   }, [node.key, node.isLoaded, updateGLBObject]);
 
-  // Determine if this unit is selected, hovered, or filtered
-  const isHovered = hoveredUnit === node.key && !selectedUnit;
-  const isSelected = selectedUnit === node.unitName && 
-                    selectedBuilding === node.building && 
-                    selectedFloor === node.floor;
-  const isFiltered = isUnitActive(node.key) && !isSelected && !isHovered;
-
-  // Update target state when selection/hover/filter changes
   useEffect(() => {
     if (isSelected) {
       targetStateRef.current = 'selected';
@@ -99,9 +100,8 @@ const GLBUnit: React.FC<GLBUnitProps> = ({ node }) => {
     }
   }, [isSelected, isHovered, isFiltered]);
 
-  // Animate fade in/out with useFrame
   useFrame((state, delta) => {
-    if (!groupRef.current) return;
+    if (!groupRef.current || !shouldLoad) return;
 
     const targetProgress = targetStateRef.current !== 'none' ? 1 : 0;
     const fadeSpeed = 1 / FADE_DURATION;
@@ -138,16 +138,22 @@ const GLBUnit: React.FC<GLBUnitProps> = ({ node }) => {
             mat.emissiveIntensity = SELECTED_MATERIAL_CONFIG.emissiveIntensity * fadeProgressRef.current;
             child.visible = true;
           } else if (targetStateRef.current === 'hovered') {
-            if (originalMaterial && (!child.material || !(child.material as any).__isAnimatedMaterial)) {
-              if (!hoveredMaterialsRef.current.has(child.uuid)) {
-                const hoveredMaterial = (originalMaterial as THREE.MeshStandardMaterial).clone();
-                hoveredMaterial.emissive = new THREE.Color(HOVERED_MATERIAL_CONFIG.emissive);
-                hoveredMaterial.emissiveIntensity = 0;
-                hoveredMaterialsRef.current.set(child.uuid, hoveredMaterial);
-              }
-              const hoveredMat = hoveredMaterialsRef.current.get(child.uuid)!;
-              (hoveredMat as any).__isAnimatedMaterial = true;
-              child.material = hoveredMat;
+            if (!hoveredMaterialsRef.current.has('shared')) {
+              const hoveredMaterial = new THREE.MeshStandardMaterial({
+                color: HOVERED_MATERIAL_CONFIG.color || '#ffffff',
+                emissive: HOVERED_MATERIAL_CONFIG.emissive,
+                emissiveIntensity: 0,
+                metalness: HOVERED_MATERIAL_CONFIG.metalness || 0.5,
+                roughness: HOVERED_MATERIAL_CONFIG.roughness || 0.5,
+                transparent: true,
+                opacity: 0.8,
+              });
+              hoveredMaterialsRef.current.set('shared', hoveredMaterial);
+            }
+            if (!child.material || !(child.material as any).__isAnimatedMaterial) {
+              const sharedMat = hoveredMaterialsRef.current.get('shared')!;
+              (sharedMat as any).__isAnimatedMaterial = true;
+              child.material = sharedMat;
             }
             const mat = child.material as THREE.MeshStandardMaterial;
             mat.emissiveIntensity = HOVERED_MATERIAL_CONFIG.emissiveIntensity * fadeProgressRef.current;
@@ -171,9 +177,8 @@ const GLBUnit: React.FC<GLBUnitProps> = ({ node }) => {
             const mat = child.material as THREE.MeshStandardMaterial;
             mat.opacity = FILTER_HIGHLIGHT_CONFIG.opacity * fadeProgressRef.current;
             
-            // Add pulsing effect for filter highlighting
             const time = state.clock.elapsedTime;
-            const pulse = (Math.sin(time * 3.0) + 1.0) * 0.5; // 0 to 1
+            const pulse = (Math.sin(time * 3.0) + 1.0) * 0.5;
             mat.emissiveIntensity = FILTER_HIGHLIGHT_CONFIG.emissiveIntensity * fadeProgressRef.current * (0.5 + pulse * 0.5);
             child.visible = true;
           } else if (fadeProgressRef.current === 0 && originalMaterial) {
@@ -200,14 +205,12 @@ const GLBUnit: React.FC<GLBUnitProps> = ({ node }) => {
       <primitive object={scene} />
     </group>
   );
-};
+});
 
-// Initialize GLB state on mount
 const GLBInitializer: React.FC = () => {
   const { glbNodes, initializeGLBNodes } = useGLBState();
   
   useEffect(() => {
-    // Initialize GLB nodes if not already done
     if (glbNodes.size === 0) {
       logger.log('LOADING', '🔧', 'GLBManager: Initializing GLB nodes...');
       MobileDiagnostics.log('glb-manager', 'Initializing GLB nodes');
@@ -223,36 +226,32 @@ const GLBInitializer: React.FC = () => {
 };
 
 export const GLBManager: React.FC = () => {
-  const { glbNodes } = useGLBState();
+  const { glbNodes, selectedUnit, selectedBuilding, selectedFloor, hoveredUnit } = useGLBState();
+  const { isUnitActive } = useFilterStore();
   
-  // Limit units based on device capabilities to reduce memory
   const isMobile = PerfFlags.isMobile;
   const nodesToRender = useMemo(() => {
     const allNodes = Array.from(glbNodes.values());
     
-    if (isMobile) {
-      // Mobile: DISABLED - load 0 units to test if crash occurs before GLB loading
-      // If this fixes the crash, we know it's GLB-related; if not, it's Canvas/WebGL
-      const limited = allNodes.slice(0, 0);
-      console.log('📱 MOBILE: GLB units DISABLED for crash testing');
-      MobileDiagnostics.warn('glb-manager', 'Mobile GLB units disabled for testing', {
-        total: allNodes.length,
-        rendering: limited.length,
-        reason: 'Isolating crash source - Canvas vs GLB models'
-      });
-      return limited;
-    }
-    
-    // Desktop: load ALL units for full functionality (selection + camera)
-    // Memory optimization via frustum culling instead of limiting units
-    console.log(`📦 Desktop: Loading all ${allNodes.length} units (frustum culling handles performance)`);
-    MobileDiagnostics.log('glb-manager', 'Desktop load full', { 
-      total: allNodes.length,
-      rendering: allNodes.length,
-      optimization: 'frustum culling active'
+    const activeNodes = allNodes.filter(node => {
+      const isHovered = hoveredUnit === node.key && !selectedUnit;
+      const isSelected = selectedUnit === node.unitName && 
+                        selectedBuilding === node.building && 
+                        selectedFloor === node.floor;
+      const isFiltered = isUnitActive(node.key) && !isSelected && !isHovered;
+      
+      return isSelected || isHovered || isFiltered;
     });
-    return allNodes;
-  }, [glbNodes, isMobile]);
+    
+    console.log(`📦 Loading ${activeNodes.length}/${allNodes.length} units on demand (mobile: ${isMobile})`);
+    MobileDiagnostics.log('glb-manager', 'Lazy loading GLB units', { 
+      total: allNodes.length,
+      rendering: activeNodes.length,
+      isMobile,
+      optimization: 'lazy load on selection'
+    });
+    return activeNodes;
+  }, [glbNodes, isMobile, selectedUnit, selectedBuilding, selectedFloor, hoveredUnit, isUnitActive]);
   
   return (
     <group>
@@ -264,5 +263,4 @@ export const GLBManager: React.FC = () => {
   );
 };
 
-// Export individual components for flexibility
 export { GLBUnit, GLBInitializer };

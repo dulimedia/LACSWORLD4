@@ -28,7 +28,6 @@ import { FloorplanPopup } from './components/FloorplanPopup';
 import { HoverToast } from './ui/HoverToast';
 import { UnitHoverPreview } from './components/UnitHoverPreview';
 import { SafariErrorBoundary } from './components/SafariErrorBoundary';
-import { MobileLoadingProgress } from './components/MobileLoadingProgress';
 import { MobileErrorBoundary } from './components/MobileErrorBoundary';
 import { Lighting } from './scene/Lighting';
 import { ShadowHelper } from './components/ShadowHelper';
@@ -322,11 +321,16 @@ const CameraController: React.FC<{
       maxDistance={25}
       dollySpeed={0.5}
       truckSpeed={1}
-      azimuthRotateSpeed={0.15}
-      polarRotateSpeed={0.15}
+      azimuthRotateSpeed={isMobile ? 0.25 : 0.15}
+      polarRotateSpeed={isMobile ? 0.25 : 0.15}
       draggingSmoothTime={0.4}
       smoothTime={0.4}
-      enablePan={!isMobile}
+      enablePan={true}
+      touches={{
+        one: 1,
+        two: 2,
+        three: 0
+      }}
     />
   );
 };
@@ -1053,25 +1057,53 @@ function App() {
     setFloorplanPopupData(null);
   }, []);
   
+  // Listen for mobile progressive loading events
+  useEffect(() => {
+    if (!PerfFlags.isMobile) return;
+    
+    const handleLoadingUpdate = (event: CustomEvent) => {
+      const { progress, message, phase } = event.detail;
+      setLoadingProgress(progress);
+      setLoadingPhase(phase);
+      console.log(`📱 Mobile loading: ${progress}% - ${message}`);
+    };
+    
+    const handleLoadingComplete = (event: CustomEvent) => {
+      const { progress, message } = event.detail;
+      setLoadingProgress(100);
+      setLoadingPhase('complete');
+      setEffectsReady(true);
+      console.log(`✅ Mobile loading complete: ${message}`);
+      
+      setTimeout(() => {
+        setModelsLoading(false);
+      }, 500);
+    };
+    
+    window.addEventListener('mobile-loading-update' as any, handleLoadingUpdate);
+    window.addEventListener('mobile-loading-complete' as any, handleLoadingComplete);
+    
+    return () => {
+      window.removeEventListener('mobile-loading-update' as any, handleLoadingUpdate);
+      window.removeEventListener('mobile-loading-complete' as any, handleLoadingComplete);
+    };
+  }, []);
+  
   // Start loading progress immediately on mount with guard to prevent infinite loop and failsafe timeout
   const loadingInitialized = useRef(false);
   useEffect(() => {
     if (loadingInitialized.current) return;
     loadingInitialized.current = true;
     
-    console.log('⏳ Loading initialized, iOS:', PerfFlags.isIOS);
+    console.log('⏳ Loading initialized, iOS:', PerfFlags.isIOS, 'isMobile:', PerfFlags.isMobile);
     setLoadingPhase('initializing');
     setLoadingProgress(5);
     
-    // iOS: Skip simulated progress entirely to reduce re-renders
-    if (PerfFlags.isIOS) {
-      console.log('📱 iOS: Fast-track loading to prevent crash');
-      setTimeout(() => {
-        console.log('📱 iOS: Loading complete');
-        setLoadingPhase('complete');
-        setLoadingProgress(100);
-        setModelsLoading(false);
-      }, 500);
+    // Mobile: Listen for progressive loading events instead of simulating
+    if (PerfFlags.isMobile) {
+      console.log('📱 Mobile: Waiting for progressive loading events...');
+      // Start at 5% and let the events drive progress
+      setLoadingPhase('loading-models');
       return;
     }
     
@@ -1088,13 +1120,16 @@ function App() {
       clearInterval(earlyProgress);
     }, 1000);
     
-    // Failsafe: force complete after 8 seconds on mobile (10s on desktop)
+    // Failsafe: force complete after 12 seconds on mobile (10s on desktop)
     const failsafeTimeout = setTimeout(() => {
       if (loadingPhase !== 'complete') {
+        console.warn('⚠️ Loading failsafe triggered');
         setLoadingPhase('complete');
         setLoadingProgress(100);
+        setEffectsReady(true);
+        setTimeout(() => setModelsLoading(false), 300);
       }
-    }, deviceCapabilities.isMobile ? 8000 : 10000);
+    }, deviceCapabilities.isMobile ? 12000 : 10000);
     
     return () => {
       clearInterval(earlyProgress);
@@ -1258,21 +1293,14 @@ function App() {
         >
           {(tier) => (
             <>
-              {/* CRITICAL FIX: Disable HDRI entirely on iOS - use simple gradient instead */}
-              {tier !== 'mobile-low' && !PerfFlags.isIOS && (
-                <Environment
-                  files={assetUrl("textures/kloofendal_48d_partly_cloudy_puresky_2k.hdr")}
-                  background={true}
-                  backgroundIntensity={tier === 'mobile-high' ? 1.2 : 1.6}
-                  environmentIntensity={tier === 'mobile-high' ? 0.8 : 1.2}
-                  resolution={tier === 'mobile-high' ? 512 : 1024}
-                />
-              )}
-              
-              {/* Simple gradient background for mobile-low and iOS (no HDRI memory spike) */}
-              {(tier === 'mobile-low' || PerfFlags.isIOS) && (
-                <color attach="background" args={['#87CEEB']} />
-              )}
+              {/* HDRI Environment - Enabled for all devices including iOS with lowest settings */}
+              <Environment
+                files={assetUrl("textures/kloofendal_48d_partly_cloudy_puresky_2k.hdr")}
+                background={true}
+                backgroundIntensity={PerfFlags.isIOS ? 0.6 : tier === 'mobile-low' ? 1.4 : tier === 'mobile-high' ? 1.2 : 1.6}
+                environmentIntensity={PerfFlags.isIOS ? 0.5 : tier === 'mobile-low' ? 1.0 : tier === 'mobile-high' ? 0.8 : 1.2}
+                resolution={PerfFlags.isIOS ? 128 : tier === 'mobile-low' ? 256 : tier === 'mobile-high' ? 512 : 1024}
+              />
 
               {/* Adaptive Performance-Based Lighting System */}
               {!PerfFlags.isIOS && tier !== 'mobile-low' && sceneRef.current && (
@@ -1285,8 +1313,8 @@ function App() {
               {/* Simple lighting for iOS and mobile-low (no shadows to reduce memory) */}
               {(PerfFlags.isIOS || tier === 'mobile-low') && (
                 <>
-                  <ambientLight intensity={0.6} />
-                  <directionalLight position={[-34, 78, 28]} intensity={5.5} castShadow={false} />
+                  <ambientLight intensity={PerfFlags.isIOS ? 0.35 : 0.6} />
+                  <directionalLight position={[-34, 78, 28]} intensity={PerfFlags.isIOS ? 3.5 : 5.5} castShadow={false} />
                 </>
               )}
               
@@ -1537,9 +1565,6 @@ function App() {
       
       {/* Error Log Display - Shows persisted errors for mobile debugging */}
       <ErrorLogDisplay />
-      
-      {/* Mobile Sequential Loading Progress */}
-      <MobileLoadingProgress />
         </div>  {/* Close app-layout */}
       </div>  {/* Close app-viewport */}
     </SafariErrorBoundary>
