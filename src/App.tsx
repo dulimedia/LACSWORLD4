@@ -30,6 +30,7 @@ import { UnitHoverPreview } from './components/UnitHoverPreview';
 import { SafariErrorBoundary } from './components/SafariErrorBoundary';
 import { MobileErrorBoundary } from './components/MobileErrorBoundary';
 import { SafariDebugBanner } from './components/SafariDebugBanner';
+import { FloorplanContext } from './contexts/FloorplanContext';
 import { Lighting } from './scene/Lighting';
 import { ShadowHelper } from './components/ShadowHelper';
 import { Effects } from './components/Effects';
@@ -319,12 +320,12 @@ const CameraController: React.FC<{
       maxPolarAngle={Math.PI * 0.48}
       minDistance={8}
       maxDistance={25}
-      dollySpeed={0.5}
-      truckSpeed={1}
-      azimuthRotateSpeed={isMobile ? 0.25 : 0.15}
-      polarRotateSpeed={isMobile ? 0.25 : 0.15}
-      draggingSmoothTime={0.4}
-      smoothTime={0.4}
+      dollySpeed={isMobile ? 0.8 : 0.5}
+      truckSpeed={isMobile ? 1.2 : 1}
+      azimuthRotateSpeed={isMobile ? 0.35 : 0.15}
+      polarRotateSpeed={isMobile ? 0.35 : 0.15}
+      draggingSmoothTime={isMobile ? 0.25 : 0.4}
+      smoothTime={isMobile ? 0.25 : 0.4}
       enablePan={true}
       touches={{
         one: 1,
@@ -1155,7 +1156,12 @@ function App() {
     }
   }, []);
 
+  const floorplanContextValue = {
+    openFloorplan: handleExpandFloorplan
+  };
+
   return (
+    <FloorplanContext.Provider value={floorplanContextValue}>
     <SafariErrorBoundary>
       {/* Loading screen - Portaled to body for true full-screen centering */}
       {modelsLoading && ReactDOM.createPortal(
@@ -1284,7 +1290,7 @@ function App() {
             filter: "none"
           }}
           gl={glConfig}
-          frameloop="always"
+          frameloop={PerfFlags.isIOS && showFloorplanPopup ? "demand" : "always"}
           onTierChange={setRenderTier}
           onCreated={({ camera }) => {
             console.log('🎨 Canvas created, iOS:', PerfFlags.isIOS, 'DPR:', PerfFlags.isIOS ? 1 : window.devicePixelRatio);
@@ -1324,8 +1330,8 @@ function App() {
               {/* Volumetric fog for god rays - only for desktop */}
               {tier.startsWith('desktop') && <fogExp2 attach="fog" args={['#b8d0e8', 0.004]} />}
 
-              {/* Adaptive Atmospheric Fog */}
-              <AtmosphericFog />
+              {/* Adaptive Atmospheric Fog - Desktop only (mobile fog causes blue-gray tint) */}
+              {!deviceCapabilities.isMobile && <AtmosphericFog />}
 
               {/* Capture scene and gl for external callbacks */}
               <SceneCapture sceneRef={sceneRef} glRef={glRef} />
@@ -1414,17 +1420,13 @@ function App() {
         
         
 
-        {/* Camera Controls - Bottom Center (Desktop) / Right Side (Mobile) */}
+        {/* Camera Controls - Bottom Center (Desktop) / Bottom Right (Mobile) */}
         {sceneEnabled && !modelsLoading && (
           <div 
             className={deviceCapabilities.isMobile 
-              ? "fixed right-4 z-40" 
+              ? "fixed right-4 bottom-6 z-40" 
               : "fixed bottom-6 z-40 camera-controls-desktop -translate-x-1/2"}
-            style={deviceCapabilities.isMobile ? {
-              top: drawerOpen ? 'calc((100vh - 45vh) / 2)' : '50vh',
-              transform: 'translateY(-50%)',
-              transition: 'top 300ms cubic-bezier(0.2, 0.8, 0.2, 1)'
-            } : {}}
+            style={deviceCapabilities.isMobile ? {} : {}}
           >
             <div className={deviceCapabilities.isMobile
               ? "bg-white/90 backdrop-blur-md rounded-lg shadow-xl border border-black/5 p-2 flex flex-col gap-2"
@@ -1538,15 +1540,13 @@ function App() {
       {/* Shadow Debug UI - DISABLED (using RealisticSun instead) */}
       
       {/* Floorplan Popup */}
-      {showFloorplanPopup && floorplanPopupData && (
-        <FloorplanPopup
-          isOpen={showFloorplanPopup}
-          onClose={handleCloseFloorplanPopup}
-          floorplanUrl={floorplanPopupData.floorplanUrl}
-          unitName={floorplanPopupData.unitName}
-          unitData={floorplanPopupData.unitData}
-        />
-      )}
+      <FloorplanPopup
+        isOpen={showFloorplanPopup && !!floorplanPopupData}
+        onClose={handleCloseFloorplanPopup}
+        floorplanUrl={floorplanPopupData?.floorplanUrl || ''}
+        unitName={floorplanPopupData?.unitName || ''}
+        unitData={floorplanPopupData?.unitData}
+      />
       
       {/* Debug info removed */}
       
@@ -1571,6 +1571,7 @@ function App() {
         </div>  {/* Close app-layout */}
       </div>  {/* Close app-viewport */}
     </SafariErrorBoundary>
+    </FloorplanContext.Provider>
   );
 }
 

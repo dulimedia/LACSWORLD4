@@ -33,21 +33,7 @@ const GLBUnit: React.FC<GLBUnitProps> = React.memo(({ node }) => {
   
   const shouldLoad = isSelected || isHovered || isFiltered;
   
-  if (!shouldLoad) {
-    return null;
-  }
-  
-  let scene, error;
-  
-  try {
-    const result = useGLTF(node.path);
-    scene = result.scene;
-    error = result.error;
-  } catch (loadError) {
-    console.error('🚨 useGLTF crash for:', node.path, loadError);
-    MobileDiagnostics.error('glb', 'useGLTF crashed', { key: node.key, path: node.path, error: loadError });
-    return null;
-  }
+  const { scene } = useGLTF(node.path);
   
   const groupRef = useRef<THREE.Group>(null);
   const originalMaterialsRef = useRef<Map<string, THREE.Material | THREE.Material[]>>(new Map());
@@ -57,12 +43,6 @@ const GLBUnit: React.FC<GLBUnitProps> = React.memo(({ node }) => {
   const selectedMaterialRef = useRef<THREE.MeshStandardMaterial>();
   const hoveredMaterialsRef = useRef<Map<string, THREE.MeshStandardMaterial>>(new Map());
   const filteredMaterialRef = useRef<THREE.MeshStandardMaterial>();
-
-  if (error) {
-    logger.warn('GLB', '⚠️', `Failed to load GLB: ${node.key}`);
-    MobileDiagnostics.error('glb', 'Failed to load GLB', { key: node.key, path: node.path });
-    return null;
-  }
 
   useEffect(() => {
     if (scene && originalMaterialsRef.current.size === 0) {
@@ -111,6 +91,11 @@ const GLBUnit: React.FC<GLBUnitProps> = React.memo(({ node }) => {
         fadeProgressRef.current = Math.min(1, fadeProgressRef.current + delta * fadeSpeed);
       } else {
         fadeProgressRef.current = Math.max(0, fadeProgressRef.current - delta * fadeSpeed);
+      }
+
+      // Make the group visible when animating
+      if (fadeProgressRef.current > 0) {
+        groupRef.current.visible = true;
       }
 
       groupRef.current.traverse((child) => {

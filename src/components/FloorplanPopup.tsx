@@ -21,6 +21,7 @@ export const FloorplanPopup: React.FC<FloorplanPopupProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0, posX: 0, posY: 0 });
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [lastTouchDistance, setLastTouchDistance] = useState<number | null>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -36,21 +37,31 @@ export const FloorplanPopup: React.FC<FloorplanPopupProps> = ({
   // Disable page scrolling when popup is open
   useEffect(() => {
     if (isOpen) {
-      // Disable body scroll
+      // Save current scroll position to prevent viewport shifts
+      const scrollY = window.scrollY;
+      
+      // Disable body scroll without resizing
       document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
       
       return () => {
-        // Re-enable body scroll
+        // Re-enable body scroll and restore position
         document.body.style.overflow = '';
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.width = '';
+        window.scrollTo(0, scrollY);
       };
     }
   }, [isOpen]);
 
   // Handle keyboard shortcuts
   useEffect(() => {
+    if (!isOpen) return;
+    
     const handleKeyPress = (e: KeyboardEvent) => {
-      if (!isOpen) return;
-      
       switch (e.key) {
         case 'Escape':
           onClose();
@@ -74,7 +85,7 @@ export const FloorplanPopup: React.FC<FloorplanPopupProps> = ({
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [isOpen, scale, isFullscreen]);
+  }, [isOpen, scale, isFullscreen, onClose]);
 
   const handleZoomIn = () => {
     setScale(prev => Math.min(prev * 1.25, 5));
@@ -122,21 +133,75 @@ export const FloorplanPopup: React.FC<FloorplanPopupProps> = ({
     setScale(prev => Math.min(Math.max(prev * delta, 0.1), 5));
   };
 
+  const getTouchDistance = (touches: React.TouchList) => {
+    if (touches.length < 2) return null;
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    e.stopPropagation();
+    if (e.touches.length === 1) {
+      setIsDragging(true);
+      setDragStart({
+        x: e.touches[0].clientX,
+        y: e.touches[0].clientY,
+        posX: position.x,
+        posY: position.y
+      });
+    } else if (e.touches.length === 2) {
+      const distance = getTouchDistance(e.touches);
+      setLastTouchDistance(distance);
+      setIsDragging(false);
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    e.stopPropagation();
+    if (e.touches.length === 1 && isDragging) {
+      const deltaX = e.touches[0].clientX - dragStart.x;
+      const deltaY = e.touches[0].clientY - dragStart.y;
+      setPosition({
+        x: dragStart.posX + deltaX,
+        y: dragStart.posY + deltaY
+      });
+    } else if (e.touches.length === 2 && lastTouchDistance) {
+      const distance = getTouchDistance(e.touches);
+      if (distance) {
+        const delta = distance / lastTouchDistance;
+        setScale(prev => Math.min(Math.max(prev * delta, 0.1), 5));
+        setLastTouchDistance(distance);
+      }
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    e.stopPropagation();
+    setIsDragging(false);
+    setLastTouchDistance(null);
+  };
+
   if (!isOpen) return null;
 
   return (
     <div 
-      className={`fixed inset-0 z-50 flex items-center justify-center ${isFullscreen ? 'bg-black' : 'bg-black bg-opacity-75'}`}
+      className={`fixed inset-0 z-[9999] flex items-center justify-center ${isFullscreen ? 'bg-black' : 'bg-black bg-opacity-75'}`}
+      onClick={(e) => e.stopPropagation()}
       onWheel={(e) => {
         e.preventDefault();
         e.stopPropagation();
       }}
+      onTouchStart={(e) => e.stopPropagation()}
+      onTouchMove={(e) => e.stopPropagation()}
+      onTouchEnd={(e) => e.stopPropagation()}
+      style={{ pointerEvents: 'auto' }}
     >
       <div 
         className={`relative bg-white rounded-lg shadow-2xl overflow-hidden ${
           isFullscreen 
             ? 'w-full h-full rounded-none' 
-            : 'w-11/12 h-5/6 max-w-6xl max-h-4xl'
+            : 'w-[95vw] h-[90vh]'
         }`}
       >
         {/* Header */}
@@ -233,8 +298,15 @@ export const FloorplanPopup: React.FC<FloorplanPopupProps> = ({
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          onTouchCancel={handleTouchEnd}
           onDoubleClick={handleReset}
-          style={{ cursor: isDragging ? 'grabbing' : scale > 1 ? 'grab' : 'default' }}
+          style={{ 
+            cursor: isDragging ? 'grabbing' : scale > 1 ? 'grab' : 'default',
+            touchAction: 'none'
+          }}
         >
           <div
             className="flex items-center justify-center w-full h-full"
@@ -249,6 +321,8 @@ export const FloorplanPopup: React.FC<FloorplanPopupProps> = ({
               alt={`Floorplan for Unit ${unitName}`}
               className="max-w-full max-h-full object-contain select-none"
               draggable={false}
+              decoding="async"
+              loading="lazy"
               onLoad={() => {
                 // Optional: Center the image when it loads
                 if (containerRef.current && imageRef.current) {

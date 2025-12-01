@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useExploreState } from '../../store/exploreState';
 import { ChevronDown, ChevronRight, Building } from 'lucide-react';
 
@@ -20,6 +20,25 @@ export function RequestTab() {
   }, [unitsByBuilding]);
 
   const [expandedFloors, setExpandedFloors] = useState<Set<string>>(new Set());
+  const [initialized, setInitialized] = useState(false);
+
+  useEffect(() => {
+    if (buildings.length === 0 || initialized) return;
+    
+    setInitialized(true);
+    
+    setExpandedBuildings(new Set(buildings));
+    const allFloors = new Set<string>();
+    buildings.forEach(building => {
+      const floors = unitsByBuilding[building];
+      if (floors) {
+        Object.keys(floors).forEach(floor => {
+          allFloors.add(`${building}/${floor}`);
+        });
+      }
+    });
+    setExpandedFloors(allFloors);
+  }, [buildings, unitsByBuilding, initialized]);
 
   const toggleBuilding = (building: string) => {
     const newExpanded = new Set(expandedBuildings);

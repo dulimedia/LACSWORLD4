@@ -101,7 +101,7 @@ function configureRenderer(renderer: THREE.WebGLRenderer, canvas: HTMLCanvasElem
   logSafari('Tone mapping set to NoToneMapping (unified for all iOS)');
   
   renderer.useLegacyLights = false;
-  renderer.setClearColor(0x000000, 0);
+  renderer.setClearColor(0xE3F2FD, 1);
   
   try {
     const testScene = new THREE.Scene();
@@ -195,7 +195,7 @@ async function createWebGPURenderer(canvas: HTMLCanvasElement): Promise<any | nu
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.NoToneMapping;
     renderer.toneMappingExposure = 1.0;
-    renderer.setClearColor(0x000000, 0);
+    renderer.setClearColor(0xE3F2FD, 1);
     
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(window.innerWidth, window.innerHeight);

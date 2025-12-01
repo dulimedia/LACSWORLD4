@@ -52,29 +52,23 @@ export function ExploreTab() {
   const [expandedFloors, setExpandedFloors] = useState<Set<string>>(new Set());
 
   const toggleBuilding = (building: string) => {
-    if (isMobile) {
-      if (expandedBuildings.has(building)) {
-        setExpandedBuildings(new Set());
-      } else {
-        setExpandedBuildings(new Set([building]));
-      }
+    const newExpanded = new Set(expandedBuildings);
+    if (newExpanded.has(building)) {
+      newExpanded.delete(building);
     } else {
-      const newExpanded = new Set(expandedBuildings);
-      if (newExpanded.has(building)) {
-        newExpanded.delete(building);
-      } else {
-        newExpanded.add(building);
-      }
-      setExpandedBuildings(newExpanded);
+      newExpanded.add(building);
     }
+    setExpandedBuildings(newExpanded);
   };
 
   const toggleFloor = (floorKey: string) => {
-    if (expandedFloors.has(floorKey)) {
-      setExpandedFloors(new Set());
+    const newExpanded = new Set(expandedFloors);
+    if (newExpanded.has(floorKey)) {
+      newExpanded.delete(floorKey);
     } else {
-      setExpandedFloors(new Set([floorKey]));
+      newExpanded.add(floorKey);
     }
+    setExpandedFloors(newExpanded);
   };
 
   const groupedByBuilding = useMemo(() => {
@@ -277,6 +271,27 @@ export function ExploreTab() {
     });
     setExpandedFloors(allFloors);
   }, [groupedByBuilding, isMobile, initialized]);
+
+  // Auto-expand all buildings when filters are active
+  useEffect(() => {
+    const hasActiveFilters = sizeFilter !== 'any' || statusFilter !== 'any' || officesFilter !== 'any';
+    
+    if (hasActiveFilters && groupedByBuilding.length > 0) {
+      // Expand all buildings to show filtered results
+      setExpandedBuildings(new Set(groupedByBuilding.map(b => b.name)));
+      
+      // Expand all floors within those buildings
+      const allFloors = new Set<string>();
+      groupedByBuilding.forEach(b => {
+        b.floorGroups.forEach(f => {
+          if (f.floorName) {
+            allFloors.add(`${b.name}/${f.floorName}`);
+          }
+        });
+      });
+      setExpandedFloors(allFloors);
+    }
+  }, [sizeFilter, statusFilter, officesFilter, groupedByBuilding]);
 
   // Update visual highlighting when filters change
   useEffect(() => {

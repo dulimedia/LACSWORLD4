@@ -1,18 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useExploreState } from '../../store/exploreState';
-import { useSidebarState } from './useSidebarState';
+import { useFloorplan } from '../../contexts/FloorplanContext';
 import { 
   MapPin, 
   Square, 
-  FileText, 
-  ExternalLink,
+  FileText,
   Share,
   CheckCircle,
-  ChevronRight,
-  ChevronLeft,
-  X,
-  ZoomIn,
-  ZoomOut,
   Maximize2,
   ArrowUp
 } from 'lucide-react';
@@ -21,15 +15,10 @@ import { getFloorplanUrl as encodeFloorplanUrl } from '../../services/floorplanS
 
 export function SuiteDetailsTab() {
   const { selectedUnitKey, unitsData } = useExploreState();
-  const { floorPlanExpanded, setFloorPlanExpanded, setView } = useSidebarState();
+  const { openFloorplan } = useFloorplan();
   const [shareUrlCopied, setShareUrlCopied] = useState(false);
   const [showIndividualFloorplan, setShowIndividualFloorplan] = useState(false);
-  const [zoom, setZoom] = useState(1);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [showScrollTop, setShowScrollTop] = useState(false);
-  const imageRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const displayUnit = selectedUnitKey ? unitsData.get(selectedUnitKey) : null;
@@ -60,7 +49,9 @@ export function SuiteDetailsTab() {
   };
 
   const handleFloorPlanClick = () => {
-    setFloorPlanExpanded(true);
+    if (currentFloorplanUrl && displayUnit) {
+      openFloorplan(currentFloorplanUrl, displayUnit.unit_name, displayUnit);
+    }
   };
 
   const handleShareClick = async () => {
@@ -75,63 +66,6 @@ export function SuiteDetailsTab() {
       console.error('Failed to copy share URL:', err);
     }
   };
-
-  const handleZoomIn = () => {
-    setZoom(prev => Math.min(prev + 0.25, 3));
-  };
-
-  const handleZoomOut = () => {
-    setZoom(prev => Math.max(prev - 0.25, 0.5));
-  };
-
-  const handleWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
-    const delta = e.deltaY > 0 ? -0.1 : 0.1;
-    setZoom(prev => Math.max(0.5, Math.min(3, prev + delta)));
-  };
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    setIsDragging(true);
-    setDragStart({ x: e.clientX - position.x, y: e.clientY - position.y });
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging) return;
-    setPosition({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y });
-  };
-
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (e.touches.length === 1) {
-      const touch = e.touches[0];
-      setIsDragging(true);
-      setDragStart({ x: touch.clientX - position.x, y: touch.clientY - position.y });
-    }
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isDragging || e.touches.length !== 1) return;
-    const touch = e.touches[0];
-    setPosition({ x: touch.clientX - dragStart.x, y: touch.clientY - dragStart.y });
-  };
-
-  const handleTouchEnd = () => {
-    setIsDragging(false);
-  };
-
-  const resetZoomAndPosition = () => {
-    setZoom(1);
-    setPosition({ x: 0, y: 0 });
-  };
-
-  useEffect(() => {
-    if (!floorPlanExpanded) {
-      resetZoomAndPosition();
-    }
-  }, [floorPlanExpanded]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -153,84 +87,9 @@ export function SuiteDetailsTab() {
     }
   };
 
+  const isAvailable = displayUnit?.status === true;
+
   if (!displayUnit) return null;
-
-  const isAvailable = displayUnit.status === true;
-
-  if (floorPlanExpanded && currentFloorplanUrl) {
-    return (
-      <div className="h-full bg-white flex flex-col" 
-      >
-        <div className="flex items-center justify-between p-4 border-b border-black/10 bg-gray-50">
-          <button
-            onClick={() => {
-              setFloorPlanExpanded(false);
-              setView('details');
-            }}
-            className="flex items-center space-x-2 text-sm text-gray-700 hover:text-gray-900"
-          >
-            <X size={20} />
-            <span>Close</span>
-          </button>
-          <div className="flex items-center space-x-2">
-            {hasIndividualFloorplan && (
-              <button
-                onClick={toggleFloorplanView}
-                className="text-xs px-3 py-1.5 rounded bg-blue-500 text-white hover:bg-blue-600"
-              >
-                {showIndividualFloorplan ? 'Show Floor Plan' : 'Show Unit Plan'}
-              </button>
-            )}
-            <button
-              onClick={handleZoomOut}
-              className="p-2 rounded bg-gray-200 text-gray-700 hover:bg-gray-300"
-              title="Zoom Out"
-            >
-              <ZoomOut size={18} />
-            </button>
-            <button
-              onClick={handleZoomIn}
-              className="p-2 rounded bg-gray-200 text-gray-700 hover:bg-gray-300"
-              title="Zoom In"
-            >
-              <ZoomIn size={18} />
-            </button>
-            <button
-              onClick={resetZoomAndPosition}
-              className="text-xs px-3 py-1.5 rounded bg-gray-200 text-gray-700 hover:bg-gray-300"
-            >
-              Reset
-            </button>
-          </div>
-        </div>
-        <div 
-          ref={imageRef}
-          className="flex-1 overflow-hidden flex items-center justify-center bg-gray-100"
-          onWheel={handleWheel}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-          style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
-        >
-          <img 
-            src={currentFloorplanUrl} 
-            alt={`${displayUnit.unit_name} Floor Plan`}
-            className="w-full h-auto select-none"
-            style={{
-              transform: `translate(${position.x}px, ${position.y}px) scale(${zoom})`,
-              transition: isDragging ? 'none' : 'transform 0.1s ease-out',
-              transformOrigin: 'center center'
-            }}
-            draggable={false}
-          />
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div ref={scrollContainerRef} className="h-full overflow-y-auto relative">

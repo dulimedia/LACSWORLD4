@@ -85,7 +85,7 @@ const GLB_STRUCTURE = {
     "Third Floor": ["M-300", "M-320", "M-340", "M-345", "M-350", "M3 Restroom"]
   },
   "Tower Building": {
-    "Main Floor": ["T-100", "T-110", "T-200", "T-210", "T-220", "T-230", "T-300", "T-320", "T-400 ", "T-410 ", "T-420 ", "T-430 ", "T-450 ", "T-500", "T-530", "T-550", "T-600", "T-700 ", "T-800 ", "T-900 ", "T-950", "T-1000 ", "T-1100 ", "T-1200 "]
+    "Main Floor": ["T-100", "T-110", "T-200", "T-210", "T-220", "T-230", "T-300", "T-320", "T-400", "T-410", "T-420", "T-430", "T-450", "T-500", "T-530", "T-550", "T-600", "T-700", "T-800", "T-900", "T-950", "T-1000", "T-1100", "T-1200"]
   }
 };
 
@@ -164,7 +164,7 @@ export const useGLBState = create<GLBState>((set, get) => ({
   },
 
   updateGLBObject: (key: string, object: THREE.Group) => {
-    const { glbNodes, loadedCount } = get();
+    const { glbNodes, loadedCount, selectedUnit, selectedBuilding, selectedFloor } = get();
     const node = glbNodes.get(key);
     
     if (node) {
@@ -192,6 +192,16 @@ export const useGLBState = create<GLBState>((set, get) => ({
       const updatedNode = { ...node, object, isLoaded: true };
       const newNodes = new Map(glbNodes);
       newNodes.set(key, updatedNode);
+      
+      // If this is the currently selected unit, trigger camera positioning now that object is loaded
+      if (selectedUnit && selectedBuilding && selectedFloor !== null) {
+        if (node.unitName === selectedUnit && node.building === selectedBuilding && node.floor === selectedFloor) {
+          // Delay slightly to ensure the object is fully registered
+          setTimeout(() => {
+            get().centerCameraOnUnit(selectedBuilding, selectedFloor, selectedUnit);
+          }, 100);
+        }
+      }
       
       set({ 
         glbNodes: newNodes, 
@@ -536,18 +546,19 @@ export const useGLBState = create<GLBState>((set, get) => ({
       return;
     }
     
+    // Update the world matrix FIRST to ensure accurate positioning
+    unitGLB.object.updateMatrixWorld(true);
+    
     // Get the unit's world position
     const unitPosition = new THREE.Vector3();
     unitGLB.object.getWorldPosition(unitPosition);
     
-    // Update the world matrix to ensure accurate positioning
-    unitGLB.object.updateMatrixWorld(true);
-    
-    // If at origin, try bounding box center
+    // If at origin or invalid, use bounding box center
     if (unitPosition.lengthSq() < 0.01) {
       const box = new THREE.Box3().setFromObject(unitGLB.object);
       if (!box.isEmpty()) {
         box.getCenter(unitPosition);
+        logger.log('CAMERA', '📦', 'Using bounding box center:', unitPosition);
       }
     }
 
@@ -557,9 +568,10 @@ export const useGLBState = create<GLBState>((set, get) => ({
       return;
     }
 
-    // Calculate eye-level camera position based on building
-    const eyeLevelHeight = 8; // Eye-level height (reduced from high angle)
-    const horizontalDistance = 15; // Distance from building for good view
+    // Calculate camera position for straight-on, less elevated view
+    const baseHeight = unitPosition.y || 0; // Fallback to 0 if unitPosition.y is undefined
+    const eyeLevelHeight = baseHeight + 3; // Match unit height more closely (reduced from 8)
+    const horizontalDistance = 12; // Closer to building for better framing (reduced from 15)
     let cameraX, cameraZ;
     
     // Building-specific camera positioning for straight-on views
@@ -583,8 +595,8 @@ export const useGLBState = create<GLBState>((set, get) => ({
     
     const cameraPosition = new THREE.Vector3(cameraX, eyeLevelHeight, cameraZ);
     
-    // Set eye-level target (slightly above unit base)
-    const targetY = unitPosition.y + 2; // Eye-level target height
+    // Set target at unit center height for straight-on view
+    const targetY = baseHeight; // Exact unit height for straight-on view
     const targetPosition = new THREE.Vector3(unitPosition.x, targetY, unitPosition.z);
 
     // Use CameraControls API for smooth animation to new position

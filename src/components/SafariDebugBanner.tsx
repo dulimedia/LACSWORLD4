@@ -14,7 +14,10 @@ export function SafariDebugBanner() {
     return () => clearInterval(interval);
   }, []);
   
-  if (!PerfFlags.isIOS) return null;
+  const params = new URLSearchParams(window.location.search);
+  const debugEnabled = params.get('debugSafari') === '1';
+  
+  if (!PerfFlags.isIOS || !debugEnabled) return null;
   
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
   const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome|CriOS|FxiOS|EdgiOS/.test(navigator.userAgent);
