@@ -1296,16 +1296,13 @@ function App() {
               {/* HDRI Environment - Using mobile-safe preset to prevent context loss */}
               <Environment
                 files={assetUrl("textures/kloofendal_48d_partly_cloudy_puresky_2k.hdr")}
-                background={false}
+                background={true}
                 backgroundIntensity={deviceCapabilities.isMobile ? 0.4 : 1.6}
                 environmentIntensity={deviceCapabilities.isMobile ? 0.3 : 1.2}
                 resolution={mobileSettings.hdriResolution}
                 onLoad={() => console.log('✅ HDRI loaded - resolution:', mobileSettings.hdriResolution)}
                 onError={(error) => console.error('❌ HDRI failed:', error)}
               />
-              
-              {/* Separate background color that doesn't re-render */}
-              <color attach="background" args={['#87CEEB']} />
 
               {/* Lighting System - Mobile-safe preset uses simple lighting */}
               {mobileSettings.useSimpleLighting ? (
