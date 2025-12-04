@@ -779,12 +779,19 @@ function App() {
 
   // Add class to body for CSS-based sidebar transitions
   useEffect(() => {
+    if (deviceCapabilities.isMobile) {
+      document.body.classList.add('sidebar-open');
+      return () => {
+        document.body.classList.remove('sidebar-open');
+      };
+    }
+
     if (drawerOpen) {
       document.body.classList.add('sidebar-open');
     } else {
       document.body.classList.remove('sidebar-open');
     }
-  }, [drawerOpen]);
+  }, [drawerOpen, deviceCapabilities.isMobile]);
 
   useEffect(() => {
     if (!drawerOpen && floorPlanExpanded) {

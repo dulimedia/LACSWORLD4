@@ -26,10 +26,6 @@ export default function Sidebar() {
 
   const collapsed = !drawerOpen;
   const setCollapsed = (value: boolean) => {
-    if (value && view === 'details') {
-      handleBackToExplore();
-    }
-
     setDrawerOpen(!value);
 
     if (value && floorPlanExpanded) {
