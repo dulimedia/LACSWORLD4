@@ -1109,12 +1109,7 @@ function App() {
   }, []);
   
   const handleExpandFloorplan = useCallback((floorplanUrl: string, unitName: string, unitData?: any) => {
-    // Disable floorplan popup on mobile devices to prevent accidental triggers
-    const isMobile = window.innerWidth < 768;
-    if (isMobile) {
-      console.log('🚫 Floorplan popup disabled on mobile device');
-      return;
-    }
+    console.log('📋 Opening floorplan:', { floorplanUrl, unitName, isMobile: deviceCapabilities.isMobile });
     
     setFloorplanPopupData({
       floorplanUrl,
@@ -1249,7 +1244,7 @@ function App() {
       {modelsLoading && ReactDOM.createPortal(
         <div className="fixed inset-0 flex justify-center items-center" 
              style={{ 
-               background: 'rgba(0, 0, 0, 0.95)',
+               background: deviceCapabilities.isMobile ? 'white' : 'rgba(0, 0, 0, 0.95)',
                zIndex: 9999,
                transition: 'opacity 0.3s ease-in-out'
              }}>
