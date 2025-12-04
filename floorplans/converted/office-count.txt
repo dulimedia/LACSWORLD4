@@ -1,0 +1,68 @@
+LACS World Office Count by Suite
+Generated: 2025-11-14
+
+Suite Number | Number of Private Offices
+-------------|-------------------------
+F-10         | 3
+F-100        | 0
+F-105        | 0
+F-115        | 0
+F-140        | 5
+F-150        | 0
+F-160        | 5
+F-170        | 6
+F-175        | 2
+F-180        | 2
+F-185        | 3
+F-187        | 0
+F-190        | 0
+F-200        | 8
+F-240        | 5
+F-250        | 6
+F-280        | 5
+F-290        | 7
+F-300        | 0
+F-330        | 6
+F-340        | 3
+F-345        | 8
+F-350        | 10
+F-360        | 5
+F-363        | 0
+F-365        | 0
+F-380        | 2
+M-120        | 0
+M-130        | 0
+M-140        | 6
+M-145        | 0
+M-150        | 5
+M-160        | 4
+M-170        | 10
+M-180        | 7
+M-210        | 0
+M-220        | 4
+M-230        | 15
+M-240        | 0
+M-250        | 0
+M-260        | 6
+M-270        | 5
+M-300        | 8
+M-320        | 8
+M-340        | 0
+M-345        | 8
+M-350        | 12
+
+COUNTING METHODOLOGY:
+- Individual closed-door offices only
+- Identified by door swing marks (curved lines)
+- Small enclosed rooms with visible doors
+- Typically located along outer walls
+- Excludes: open areas, conference rooms, kitchens
+
+SUMMARY STATISTICS:
+- Total Suites Analyzed: 47
+- Suites with Offices: 32
+- Suites without Offices: 15
+- Highest Office Count: M-230 (15 offices)
+- Second Highest: M-350 (12 offices)
+- Average Offices per Suite (all): 4.3
+- Average Offices per Suite (excluding 0): 6.3

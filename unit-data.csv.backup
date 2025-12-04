@@ -1,0 +1,112 @@
+Product,Available,Size,Amenities,Floorplan,Building,Floor,Unit_Type,Kitchen_Size,Height
+F-10,0,1,200 RSF,Central Air • Loading dock access,/floorplans/converted/FGFloor_LACS_page_1.png,Fifth Street Building,Gound Floor,Suite,None,
+F-15,0,1,500 RSF,Central Air • Large ground floor space,/floorplans/converted/FGFloor_LACS_page_1.png,Fifth Street Building,Gound Floor,Suite,None,
+F-20,1,1,800 RSF,Central Air • Premium floor unit,/floorplans/converted/FGFloor_LACS_page_1.png,Fifth Street Building,Gound Floor,Suite,None,
+F-25,1,1,400 RSF,Central Air • Standard floor unit,/floorplans/converted/FGFloor_LACS_page_1.png,Fifth Street Building,Gound Floor,Suite,None,
+F-30,1,2,000 RSF,Central Air • Large floor unit,/floorplans/converted/FGFloor_LACS_page_1.png,Fifth Street Building,Gound Floor,Suite,None,
+F-35,1,1,600 RSF,Central Air • Corner floor unit,/floorplans/converted/FGFloor_LACS_page_1.png,Fifth Street Building,Gound Floor,Suite,None,
+F-40,1,1,300 RSF,Central Air • Standard floor space,/floorplans/converted/FGFloor_LACS_page_1.png,Fifth Street Building,Gound Floor,Suite,None,
+F-50,1,1,700 RSF,Central Air • Large floor space,/floorplans/converted/FGFloor_LACS_page_1.png,Fifth Street Building,Gound Floor,Suite,None,
+F-60,1,1,400 RSF,Central Air • Mid-size floor unit,/floorplans/converted/FGFloor_LACS_page_1.png,Fifth Street Building,Gound Floor,Suite,None,
+F-70,1,1,900 RSF,Central Air • Premium floor space,/floorplans/converted/FGFloor_LACS_page_1.png,Fifth Street Building,Gound Floor,Suite,None,
+F-100,1,1,515 RSF,Central Air • In-unit Laundry • Storage,/floorplans/converted/FGFloor_LACS_page_1.png,Fifth Street Building,First Floor,Suite,Full,
+F-105,1,500 RSF,Central Air • Storage,/floorplans/converted/FGFloor_LACS_page_1.png,Fifth Street Building,First Floor,Suite,None,
+F-110 CR,0,750 RSF,Central Air • Storage • Conference Room,/floorplans/converted/FGFloor_LACS_page_1.png,Fifth Street Building,First Floor,Suite,None,
+F-115,1,461 RSF,Central Air • Storage,/floorplans/converted/FGFloor_LACS_page_1.png,Fifth Street Building,First Floor,Suite,None,
+F-140,1,2,495 RSF,Central Air • In-unit Laundry • Storage,/floorplans/converted/FGFloor_LACS_page_1.png,Fifth Street Building,First Floor,Suite,Kitchen,
+F-150,1,765 RSF,Central Air • Storage,/floorplans/converted/FGFloor_LACS_page_1.png,Fifth Street Building,First Floor,Suite,None,
+F-160,1,2,411 RSF,Central Air • In-unit Laundry • Storage,/floorplans/converted/FGFloor_LACS_page_1.png,Fifth Street Building,First Floor,Suite,Kitchen,
+F-170,1,1,783 RSF,Central Air • In-unit Laundry • Storage,/floorplans/converted/FGFloor_LACS_page_1.png,Fifth Street Building,First Floor,Suite,Full,
+F-175,1,840 RSF,Central Air • Storage,/floorplans/converted/FGFloor_LACS_page_1.png,Fifth Street Building,First Floor,Suite,None,
+F-180,1,647 RSF,Central Air • In-unit Laundry • Storage • Balcony • Premium • Corner,/floorplans/converted/FGFloor_LACS_page_1.png,Fifth Street Building,First Floor,Suite,None,
+F-185,1,1,200 RSF,Central Air • Storage,/floorplans/converted/FGFloor_LACS_page_1.png,Fifth Street Building,First Floor,Suite,None,
+F-187,1,800 RSF,Central Air • Storage,/floorplans/converted/FGFloor_LACS_page_1.png,Fifth Street Building,First Floor,Suite,None,
+F-190,1,950 RSF,Central Air • Storage,/floorplans/converted/FGFloor_LACS_page_1.png,Fifth Street Building,First Floor,Suite,None,
+F-200,1,3,389 RSF,Central Air • In-unit Laundry • Storage,/floorplans/converted/f200.png,Fifth Street Building,Second Floor,Suite,Full,
+F-240,1,3,439 RSF,Central Air • Storage • Balcony,/floorplans/converted/f240.png,Fifth Street Building,Second Floor,Suite,Kitchen,
+F-250,1,2,819 RSF,Central Air • Storage,/floorplans/converted/f250.png,Fifth Street Building,Second Floor,Suite,Kitchen,
+F-280,1,4,008 RSF,Central Air • In-unit Laundry • Storage • Balcony • Premium,/floorplans/converted/f280.png,Fifth Street Building,Second Floor,Suite,Full,
+F-290,1,3,535 RSF,Central Air • Storage,/floorplans/converted/f290.png,Fifth Street Building,Second Floor,Suite,Kitchen,
+F-300,1,2,856 RSF,Central Air • Storage,/floorplans/converted/f300.png,Fifth Street Building,Third Floor,Suite,Full,
+F-330,1,2,956 RSF,Central Air • Storage,/floorplans/converted/f330.png,Fifth Street Building,Third Floor,Suite,Full,
+F-340,1,1,620 RSF,Central Air • Storage,/floorplans/converted/f340.png,Fifth Street Building,Third Floor,Suite,Full,
+F-350,1,3,535 RSF,Central Air • Storage,/floorplans/converted/f350.png,Fifth Street Building,Third Floor,Suite,Full,
+F-360,1,2,611 RSF,Central Air • Storage,/floorplans/converted/f360.png,Fifth Street Building,Third Floor,Suite,Full,
+F-363,1,702 RSF,Central Air • Storage,/floorplans/converted/f363.png,Fifth Street Building,Third Floor,Suite,None,
+F-365,1,2,550 RSF,Central Air • Storage,/floorplans/converted/f365.png,Fifth Street Building,Third Floor,Suite,Full,
+F-380,1,2,600 RSF,Central Air • Storage,/floorplans/converted/f380.png,Fifth Street Building,Third Floor,Suite,Full,
+M-20,1,2,171 RSF,Central Air • Storage,/floorplans/converted/mg floorplan.png,Maryland Building,Ground Floor,Suite,None,
+M-40,0,2,460 RSF,Central Air • Storage,/floorplans/converted/mg floorplan.png,Maryland Building,Ground Floor,Suite,None,
+M-45,0,1000 RSF,Central Air • Storage,/floorplans/converted/mg floorplan.png,Maryland Building,Ground Floor,Storage,None,
+M-50,0,3,269 RSF,Central Air • Storage,/floorplans/converted/mg floorplan.png,Maryland Building,Ground Floor,Dance Studio,None,
+M-120,0,1,076 RSF,Central Air • Storage,/floorplans/converted/m120.png,Maryland Building,First Floor,Suite,Full,
+M-130,0,2,274 RSF,Central Air • Storage,/floorplans/converted/m130.png,Maryland Building,First Floor,Suite,Kitchen,
+M-140,1,2,013 RSF,Central Air • Storage,/floorplans/converted/m140.png,Maryland Building,First Floor,Suite,Full,
+M-145,1,860 RSF,Central Air • Storage,/floorplans/converted/m145.png,Maryland Building,First Floor,Suite,Full,
+M-150,0,3,882 RSF,Central Air • Storage,/floorplans/converted/m150.png,Maryland Building,First Floor,Suite,Full,
+M-160,0,2,103 RSF,Central Air • Storage,/floorplans/converted/m160.png,Maryland Building,First Floor,Suite,Full,
+M-170,1,3,605 RSF,Central Air • Storage,/floorplans/converted/m170.png,Maryland Building,First Floor,Suite,Full,
+M-180,0,3,592 RSF,Central Air • Storage,/floorplans/converted/m180.png,Maryland Building,First Floor,Suite,Full,
+M-210,1,855 RSF,Central Air • Storage,/floorplans/converted/m210.png,Maryland Building,Second Floor,Suite,Full,
+M-220,0,2,026 RSF,Central Air • Storage,/floorplans/converted/m220.png,Maryland Building,Second Floor,Suite,Full,
+M-230,0,6,866 RSF,Central Air • Storage,/floorplans/converted/m230.png,Maryland Building,Second Floor,Suite,Full,
+M-240,1,1,499 RSF,Central Air • Storage,/floorplans/converted/m240.png,Maryland Building,Second Floor,Suite,Full,
+M-250,1,1,291 RSF,Central Air • Storage,/floorplans/converted/m250.png,Maryland Building,Second Floor,Suite,Full,
+M-260,1,2,105 RSF,Central Air • Storage,/floorplans/converted/m260.png,Maryland Building,Second Floor,Suite,Full,
+M-270,1,2,253 RSF,Central Air • Storage,/floorplans/converted/m270.png,Maryland Building,Second Floor,Suite,Full,
+M-300,0,7,002 RSF,Central Air • Storage,/floorplans/converted/m300.png,Maryland Building,Third Floor,Suite,Full,
+M-320,0,2,698 RSF,Central Air • Storage,/floorplans/converted/m320.png,Maryland Building,Third Floor,Suite,Full,
+M-340,1,7,215 RSF,Central Air • Storage,/floorplans/converted/m340.png,Maryland Building,Third Floor,Suite,Full,
+M-345,1,3650,Central Air • Storage,/floorplans/converted/m345.png,Maryland Building,Third Floor,Suite,Full,
+M-350,1,2,576 RSF,Central Air • Storage,/floorplans/converted/m350.png,Maryland Building,Third Floor,Suite,None,
+ET-Lab,0,928 RSF,Technology Laboratory Space,/floorplans/converted/mg floorplan.png,Maryland Building,Ground Floor,Lab,None,
+Studio O.M.,0,6,919 RSF,Private Studio Space,/floorplans/converted/mg floorplan.png,Maryland Building,Ground Floor,Studio,None,
+T-100,0,7,564 RSF,Central Air • High ceilings,/floorplans/converted/LACS_Floor 1_M1_Color_page_1.png,Tower Building,Floor 1,Suite,Full,25ft
+T-110,0,6,744 RSF,Central Air • High ceilings,/floorplans/converted/LACS_Floor 1_M1_Color_page_1.png,Tower Building,Floor 1,Suite,Full,25ft
+T-200,1,4,746 RSF,Central Air • High ceilings,/floorplans/converted/LACS_T-200_M1_Color_page_1.png,Tower Building,Floor 2,Suite,Full,30ft
+T-210,0,1,600 RSF,Central Air • High ceilings,/floorplans/converted/t210.png,Tower Building,Floor 2,Suite,Full,30ft
+T-220,1,1,700 RSF,Central Air • High ceilings,/floorplans/converted/t220.png,Tower Building,Floor 2,Suite,Full,30ft
+T-230,1,6,677 RSF,Central Air • High ceilings,/floorplans/converted/LACS_Floor 2_M1_Color_page_1.png,Tower Building,Floor 2,Suite,Full,30ft
+T-300,1,4,865 RSF,Central Air • High ceilings,/floorplans/converted/LACS_Floor 3_Color_page_1.png,Tower Building,Floor 3,Suite,Full,35ft
+T-310,0,3,497 RSF,Central Air • High ceilings,/floorplans/converted/LACS_Floor 3_Color_page_1.png,Tower Building,Floor 3,Suite,Full,35ft
+T-320,1,7,515 RSF,Central Air • High ceilings,/floorplans/converted/LACS_Floor 3_Color_page_1.png,Tower Building,Floor 3,Suite,Full,35ft
+T-400,1,4,514 RSF,Central Air • High ceilings,/floorplans/converted/LACS_T-400_M1_Color_Compressed_page_1.png,Tower Building,Floor 4,Stage,Full,40ft
+T-410,1,2,600 RSF,Central Air • High ceilings,/floorplans/converted/t410.png,Tower Building,Floor 4,Stage,Full,40ft
+T-420,1,2,700 RSF,Central Air • High ceilings,/floorplans/converted/t420.png,Tower Building,Floor 4,Stage,Full,40ft
+T-430,1,2,900 RSF,Central Air • High ceilings,/floorplans/converted/t430.png,Tower Building,Floor 4,Stage,Full,40ft
+T-450,1,3,000 RSF,Central Air • High ceilings,/floorplans/converted/t450.png,Tower Building,Floor 4,Stage,Full,40ft
+T-500,1,3,200 RSF,Central Air • High ceilings,/floorplans/converted/t500.png,Tower Building,Floor 5,Stage,Full,45ft
+T-530,1,3,400 RSF,Central Air • High ceilings,/floorplans/converted/t530.png,Tower Building,Floor 5,Stage,Full,45ft
+T-550,1,3,600 RSF,Central Air • High ceilings,/floorplans/converted/t550.png,Tower Building,Floor 5,Stage,Full,45ft
+T-600,0,3,800 RSF,Central Air • High ceilings,/floorplans/converted/t600.png,Tower Building,Floor 6,Stage,Full,50ft
+T-700,0,4,200 RSF,Central Air • High ceilings,/floorplans/converted/t700.png,Tower Building,Floor 7,Stage,Full,55ft
+T-800,0,4,600 RSF,Central Air • High ceilings,/floorplans/converted/t800.png,Tower Building,Floor 8,Stage,Full,60ft
+T-900,0,5,000 RSF,Central Air • High ceilings,/floorplans/converted/t900.png,Tower Building,Floor 9,Stage,Full,65ft
+T-950,0,5,200 RSF,Central Air • High ceilings,/floorplans/converted/t950.png,Tower Building,Floor 9,Stage,Full,65ft
+T-1000,0,10,038 RSF,Central Air • High ceilings,/floorplans/converted/LACS_Floor 10_M1_Color_page_1.png,Tower Building,Floor 10,Stage,Full,70ft
+T-1100,1,6,000 RSF,Central Air • High ceilings,/floorplans/converted/t1100.png,Tower Building,Floor 11,Stage,Full,75ft
+T-1200,1,18,025 RSF,Central Air • High ceilings,/floorplans/converted/LACS_Floor 12_M1_Color_page_1.png,Tower Building,Floor 12,Stage,Full,80ft
+Stage A,1,8,000 RSF,Full production stage with lighting grid,,Stages,Ground Floor,Stage,None,30ft
+Stage B,1,7,500 RSF,Large production stage,,Stages,Ground Floor,Stage,None,28ft
+Stage C,1,8,500 RSF,Premium production stage,,Stages,Ground Floor,Stage,None,32ft
+Stage D,1,7,200 RSF,Standard production stage,,Stages,Ground Floor,Stage,None,26ft
+Stage E,1,9,000 RSF,Large premium production stage,,Stages,Ground Floor,Stage,None,35ft
+Stage F,1,8,200 RSF,Full service production stage,,Stages,Ground Floor,Stage,None,30ft
+Stage 7,0,4,516 RSF,Professional production stage,,Stages,Ground Floor,Stage,None,28ft
+Stage 8,1,8,400 RSF,Large production facility,,Stages,Ground Floor,Stage,None,32ft
+Production Support A,1,2,000 RSF,Production support facilities,,Stages,Production,Support,None,20ft
+Production Support B,1,2,200 RSF,Large production support area,,Stages,Production,Support,None,20ft
+Production Support C,1,2,400 RSF,Premium production support,,Stages,Production,Support,None,20ft
+Production Support D,1,2,600 RSF,Large production support facility,,Stages,Production,Support,None,20ft
+Event Area 1,1,,Large event and conference space,,Other,Event Space,Event Space,None,1 story
+Flix Cafe,1,,Cafe and dining space,,Other,Event Space,Other,Full,2 stories
+Theater,1,,Full theater and screening facility • 350 seats,,Other,Event Space,Event Space,None,25ft
+MILL 2,1,5,360 RSF,Mill building workspace,,Other,Mills,Other,None,18ft
+MILL 3,1,3,432 RSF,Large mill workspace,,Other,Mills,Other,None,18ft
+MILL 3 OFFICE,1,1,200 RSF,Office space in mill building,,Other,Mills,Other,Full,10ft
+MILL 4,1,5,230 RSF,Premium mill workspace,,Other,Mills,Other,None,20ft
+Park,1,,Green space and recreational area,,Other,Parking,Other,None,
+Surface Parking,1,,Outdoor parking area,,Other,Parking,Parking,None,
+Surface Parking 2,1,,Additional outdoor parking,,Other,Parking,Parking,None,
+Kiosk,1,200 RSF,Small retail kiosk space,,Other,Shops,Retail,None,10ft
+Lobby 2,1,1,200 RSF,Building lobby and reception area,,Other,Shops,Commercial,None,12ft

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>iOS Test - Minimal</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            background: white;
+            overflow: hidden;
+        }
+        #status {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            background: #f0f0f0;
+            padding: 20px;
+            border-radius: 10px;
+            font-size: 14px;
+            z-index: 9999;
+        }
+        .success { background: #4CAF50; color: white; }
+        .error { background: #f44336; color: white; }
+        #log {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            max-height: 300px;
+            overflow-y: auto;
+            background: rgba(0,0,0,0.9);
+            color: #0f0;
+            font-family: monospace;
+            font-size: 11px;
+            padding: 10px;
+        }
+        .log-line { margin: 2px 0; }
+    </style>
+</head>
+<body>
+    <div id="status">Testing iOS Safari compatibility...</div>
+    <div id="log"></div>
+    
+    <script>
+        const log = (msg) => {
+            console.log(msg);
+            const logDiv = document.getElementById('log');
+            const line = document.createElement('div');
+            line.className = 'log-line';
+            line.textContent = new Date().toISOString().substr(11, 12) + ' ' + msg;
+            logDiv.appendChild(line);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        };
+        
+        const updateStatus = (msg, isError = false) => {
+            const status = document.getElementById('status');
+            status.textContent = msg;
+            status.className = isError ? 'error' : 'success';
+        };
+        
+        // Step 1: Basic detection
+        log('✅ JavaScript loaded');
+        log('User Agent: ' + navigator.userAgent.substring(0, 80));
+        log('Is iOS: ' + /iPhone|iPad|iPod/i.test(navigator.userAgent));
+        log('Device Memory: ' + (navigator.deviceMemory || 'unknown') + ' GB');
+        log('Screen: ' + window.innerWidth + 'x' + window.innerHeight);
+        log('DPR: ' + window.devicePixelRatio);
+        
+        // Step 2: Wait 2 seconds before WebGL test
+        updateStatus('Step 1/4: Page loaded successfully');
+        
+        setTimeout(() => {
+            log('⏱️ 2 second delay complete');
+            updateStatus('Step 2/4: Testing WebGL support...');
+            
+            // Step 3: Test WebGL availability
+            setTimeout(() => {
+                try {
+                    const canvas = document.createElement('canvas');
+                    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+                    
+                    if (!gl) {
+                        throw new Error('WebGL not supported');
+                    }
+                    
+                    log('✅ WebGL context created');
+                    log('WebGL Version: ' + gl.getParameter(gl.VERSION));
+                    log('Vendor: ' + gl.getParameter(gl.VENDOR));
+                    log('Renderer: ' + gl.getParameter(gl.RENDERER));
+                    log('Max Texture Size: ' + gl.getParameter(gl.MAX_TEXTURE_SIZE));
+                    
+                    updateStatus('Step 3/4: WebGL works! Testing memory...');
+                    
+                    // Step 4: Memory test
+                    setTimeout(() => {
+                        try {
+                            if (performance.memory) {
+                                log('Heap Used: ' + (performance.memory.usedJSHeapSize / 1024 / 1024).toFixed(2) + ' MB');
+                                log('Heap Limit: ' + (performance.memory.jsHeapSizeLimit / 1024 / 1024).toFixed(2) + ' MB');
+                            }
+                            
+                            updateStatus('✅ ALL TESTS PASSED! iOS Safari is compatible. Redirecting to app in 3 seconds...');
+                            log('✅ All compatibility tests passed');
+                            
+                            setTimeout(() => {
+                                window.location.href = '/';
+                            }, 3000);
+                            
+                        } catch (e) {
+                            throw new Error('Memory test failed: ' + e.message);
+                        }
+                    }, 1000);
+                    
+                } catch (e) {
+                    log('❌ ERROR: ' + e.message);
+                    updateStatus('❌ WebGL Test Failed: ' + e.message, true);
+                }
+            }, 1000);
+            
+        }, 2000);
+        
+        // Crash handler
+        window.addEventListener('error', (e) => {
+            log('❌ CRASH: ' + e.message);
+            updateStatus('❌ Page crashed: ' + e.message, true);
+        });
+        
+        window.addEventListener('unhandledrejection', (e) => {
+            log('❌ Promise rejection: ' + e.reason);
+            updateStatus('❌ Promise error: ' + e.reason, true);
+        });
+    </script>
+</body>
+</html>

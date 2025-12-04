@@ -1,0 +1,93 @@
+Unit Name,Availability,Square Feet,Building,Floor,Type,Kitchen,Contact Email ID,Floorplan,Private Offices
+F-100,0,850sf,Fifth Street Building,First Floor,Suite,Kitchen,1,/floorplans/converted/f100.jpg,0
+F-105,0,900sf,Fifth Street Building,First Floor,Suite,,1,/floorplans/converted/f105.jpg,0
+F-110 CR,1,750sf,Fifth Street Building,First Floor,Suite,,1,/floorplans/converted/F1_Floorplan.png,0
+F-115,0,1200sf,Fifth Street Building,First Floor,Spa,,1,/floorplans/converted/f115.jpg,0
+F-140,0,680sf,Fifth Street Building,First Floor,Stage,Kitchen,1,/floorplans/converted/f140.jpg,5
+F-150,1,950sf,Fifth Street Building,First Floor,Suite,,1,/floorplans/converted/f150.jpg,0
+F-160,1,800sf,Fifth Street Building,First Floor,Stage,Kitchen,1,/floorplans/converted/f160.jpg,5
+F-170,0,1100sf,Fifth Street Building,First Floor,Suite,Kitchen,1,/floorplans/converted/f170.jpg,6
+F-175,0,720sf,Fifth Street Building,First Floor,Stage,,1,/floorplans/converted/f175.jpg,2
+F-180,0,1350sf,Fifth Street Building,First Floor,Suite,,1,/floorplans/converted/f180.jpg,2
+F-200,1,3389sf,Fifth Street Building,Second Floor,Suite,Kitchen,1,/floorplans/converted/f200.jpg,8
+F-240,1,920sf,Fifth Street Building,Second Floor,Suite,Kitchen,1,/floorplans/converted/f240.jpg,5
+F-250,1,2819sf,Fifth Street Building,Second Floor,Suite,Kitchen,1,/floorplans/converted/f250.jpg,6
+F-280,1,4008sf,Fifth Street Building,Second Floor,Suite,Kitchen,1,/floorplans/converted/f280.jpg,5
+F-290,1,3535sf,Fifth Street Building,Second Floor,Suite,Kitchen,1,/floorplans/converted/f290.jpg,7
+F-300,1,2856sf,Fifth Street Building,Third Floor,Suite,Kitchen,1,/floorplans/converted/f300.jpg,0
+F-330,1,2956sf,Fifth Street Building,Third Floor,Suite,Kitchen,1,/floorplans/converted/f330.jpg,6
+F-340,1,1851sf,Fifth Street Building,Third Floor,Suite,Compact,1,/floorplans/converted/f340.jpg,3
+F-350,1,3535sf,Fifth Street Building,Third Floor,Suite,Kitchen,1,/floorplans/converted/f350.jpg,10
+F-360,1,2611sf,Fifth Street Building,Third Floor,Suite,Kitchen,1,/floorplans/converted/f360.jpg,5
+F-363,0,702sf,Fifth Street Building,Third Floor,Suite,,1,/floorplans/converted/f363.jpg,0
+F-365,1,813sf,Fifth Street Building,Third Floor,Suite,Kitchen,1,/floorplans/converted/f365.jpg,0
+F-380,0,1358sf,Fifth Street Building,Third Floor,Conference Room,Kitchen,1,/floorplans/converted/f380.jpg,2
+F-10,1,4292sf,Fifth Street Building,Ground Floor,Co-Working Space,,1,/floorplans/FGFloor_LACS_page_1.png,3
+F-15,0,654sf,Fifth Street Building,Ground Floor,Suite,,1,/floorplans/FGFloor_LACS_page_1.png,0
+F-20,0,795sf,Fifth Street Building,Ground Floor,Suite,,1,/floorplans/FGFloor_LACS_page_1.png,0
+F-25,0,579sf,Fifth Street Building,Ground Floor,Suite,,1,/floorplans/FGFloor_LACS_page_1.png,0
+F-30,1,795sf,Fifth Street Building,Ground Floor,Suite,,1,/floorplans/FGFloor_LACS_page_1.png,0
+F-35,1,709sf,Fifth Street Building,Ground Floor,Suite,,1,/floorplans/FGFloor_LACS_page_1.png,0
+F-40,0,656sf,Fifth Street Building,Ground Floor,Suite,,1,/floorplans/FGFloor_LACS_page_1.png,0
+F-50,1,795sf,Fifth Street Building,Ground Floor,Suite,,1,/floorplans/FGFloor_LACS_page_1.png,0
+F-60,1,795sf,Fifth Street Building,Ground Floor,Suite,,1,/floorplans/FGFloor_LACS_page_1.png,0
+F-70,1,656sf,Fifth Street Building,Ground Floor,Suite,,1,/floorplans/FGFloor_LACS_page_1.png,0
+M-120,1,1076sf,Maryland Building,First Floor,Suite,,1,/floorplans/converted/m120.jpg,0
+M-130,1,2274sf,Maryland Building,First Floor,Suite,Kitchen,1,/floorplans/converted/m130.jpg,0
+M-140,1,2013sf,Maryland Building,First Floor,Suite,Kitchen,1,/floorplans/converted/m140.jpg,6
+M-145,0,860sf,Maryland Building,First Floor,Suite,Kitchen,1,/floorplans/converted/m145.jpg,0
+M-150,1,3882sf,Maryland Building,First Floor,Suite,Kitchen,1,/floorplans/converted/m150.jpg,5
+M-160,1,1473sf,Maryland Building,First Floor,Suite,Kitchen,1,/floorplans/converted/m160.jpg,4
+M-170,1,3605sf,Maryland Building,First Floor,Suite,Kitchen,1,/floorplans/converted/m170.jpg,10
+M-180,1,3592sf,Maryland Building,First Floor,Suite,Kitchen,1,/floorplans/converted/m180.jpg,7
+M-20,1,2171sf,Maryland Building,Ground Floor,Conference Room,,1,/floorplans/converted/LACS_Site Map_M1_Color_page_1.png,0
+M-40,1,2460sf,Maryland Building,Ground Floor,Dance Studio,,1,/floorplans/converted/LACS_Site Map_M1_Color_page_1.png,0
+M-45,1,1000sf,Maryland Building,Ground Floor,Storage,,1,/floorplans/converted/LACS_Site Map_M1_Color_page_1.png,0
+M-50,1,3269sf,Maryland Building,Ground Floor,Dance Studio,,1,/floorplans/converted/LACS_Site Map_M1_Color_page_1.png,0
+ET-Lab,1,928sf,Maryland Building,Ground Floor,Suite,,1,/floorplans/converted/LACS_Site Map_M1_Color_page_1.png,0
+Studio O.M.,1,6919sf,Maryland Building,Ground Floor,Studio,,1,/floorplans/converted/mg floorplan.jpg,0
+MG - Stage 7,1,4516sf,Maryland Building,Ground Floor,Stage,Kitchenette,1,/floorplans/converted/mg floorplan.jpg,0
+M-210,1,855sf,Maryland Building,Second Floor,Suite,Kitchen,1,/floorplans/converted/m210.jpg,0
+M-220,1,2026sf,Maryland Building,Second Floor,Unavailable,Kitchen,1,/floorplans/converted/m220.jpg,4
+M-230,1,6866sf,Maryland Building,Second Floor,Unavailable,Kitchen,1,/floorplans/converted/m230.jpg,15
+M-240,1,1499sf,Maryland Building,Second Floor,"Unavailable, No Kitchen",Kitchen,1,/floorplans/converted/m240.jpg,0
+M-250,1,1291sf,Maryland Building,Second Floor,"Unavailable, No Kitchen",Kitchen,1,/floorplans/converted/m250.jpg,0
+M-260,1,2105sf,Maryland Building,Second Floor,Suite,Kitchen,1,/floorplans/converted/m260.jpg,6
+M-270,1,2253sf,Maryland Building,Second Floor,Suite,Kitchen,1,/floorplans/converted/m270.jpg,5
+M-300,1,7002sf,Maryland Building,Third Floor,Suite,Kitchen,1,/floorplans/converted/m300.jpg,8
+M-320,1,2698sf,Maryland Building,Third Floor,Suite,Kitchen,1,/floorplans/converted/m320.jpg,8
+M-340,1,2981sf,Maryland Building,Third Floor,Suite,Kitchen,1,/floorplans/converted/m340.jpg,0
+M-345,1,2406sf,Maryland Building,Third Floor,Suite,Kitchen,1,/floorplans/converted/m345.jpg,8
+M-350,1,2576sf,Maryland Building,Third Floor,Editing Suite,,1,/floorplans/converted/m350.jpg,12
+T-100,1,18025sf,Tower Building,,Filming Location,Kitchen,1,/floorplans/t-1floor.jpg,0
+T-110,1,980sf,Tower Building,,Suite,Compact,1,/floorplans/t-1floor.jpg,0
+T-200,1,1350sf,Tower Building,,Suite,Kitchen,1,/floorplans/t200.jpg,0
+T-210,0,2145sf,Tower Building,,Suite,Kitchenette,1,/floorplans/t210.jpg,0
+T-220,1,5677sf,Tower Building,,Suite,Kitchen,1,/floorplans/t220.jpg,0
+T-230,1,2948sf,Tower Building,,Suite,Kitchen,1,/floorplans/tower-unit.jpg,0
+T-320,1,7215sf,Tower Building,,Suite,Compact,1,/floorplans/tower-unit.jpg,0
+T-300,1,4950sf,Tower Building,,Suite,Kitchen,1,/floorplans/tower-unit.jpg,0
+T-410,1,3582sf,Tower Building,,Suite,Kitchen,1,/floorplans/tower-unit.jpg,0
+T-400,1,1500sf,Tower Building,,Suite,Kitchen,1,/floorplans/tower-unit.jpg,0
+T-420,1,3004sf,Tower Building,,Suite,Compact,1,/floorplans/tower-unit.jpg,0
+T-430,1,2194sf,Tower Building,,Suite,Kitchen,1,/floorplans/tower-unit.jpg,0
+T-450,1,2961sf,Tower Building,,Suite,Kitchen,1,/floorplans/tower-unit.jpg,0
+T-530,1,8152sf,Tower Building,,Suite,Kitchen,1,/floorplans/tower-unit.jpg,0
+T-500,1,5348sf,Tower Building,,Suite,Kitchen,1,/floorplans/tower-unit.jpg,0
+T-550,1,2312sf,Tower Building,,Suite,Kitchen,1,/floorplans/tower-unit.jpg,0
+T-600,1,18025sf,Tower Building,,Filming Location,Kitchen,1,/floorplans/tower-unit.jpg,0
+T-700,1,18025sf,Tower Building,,Suite,Kitchen,1,/floorplans/tower-unit.jpg,0
+T-800,1,18025sf,Tower Building,,Suite,Kitchen,1,/floorplans/tower-unit.jpg,0
+T-900,1,12259sf,Tower Building,,Suite,Kitchen,1,/floorplans/tower-unit.jpg,0
+T-950,1,4363sf,Tower Building,,Suite,Kitchen,1,/floorplans/tower-unit.jpg,0
+T-1000,1,2600sf,Tower Building,,Suite,Kitchen,1,/floorplans/tower-unit.jpg,0
+T-1100,1,18025sf,Tower Building,,Suite,Kitchen,1,/floorplans/tower-unit.jpg,0
+T-1200,1,18025sf,Tower Building,,Suite,Kitchen,1,/floorplans/tower-unit.jpg,0
+Stage A,1,2500sf,Stages,,Stage,,1,/floorplans/stage-a.jpg,0
+Stage B,1,3000sf,Stages,,Stage,,1,/floorplans/stage-b.jpg,0
+Stage C,1,2200sf,Stages,,Stage,,1,/floorplans/stage-c.jpg,0
+Stage D,0,2800sf,Stages,,Stage,,1,/floorplans/stage-d.jpg,0
+Stage E,1,1800sf,Stages,,Stage,,1,/floorplans/stage-e.jpg,0
+Stage F,1,2400sf,Stages,,Stage,,1,/floorplans/stage-f.jpg,0
+Stage 7,1,3200sf,Stages,,Stage,Kitchenette,1,/floorplans/converted/mg-floorplan.jpg,0
+Stage 8,1,2900sf,Stages,,Stage,Kitchenette,1,/floorplans/stage-8.jpg,0

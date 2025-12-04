@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>iOS Detection Test</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: monospace; padding: 20px; background: #f0f0f0; }
+        .result { background: white; padding: 20px; margin: 10px 0; border-radius: 8px; }
+        .ios { background: #4CAF50; color: white; }
+        .not-ios { background: #f44336; color: white; }
+    </style>
+</head>
+<body>
+    <h1>iOS Detection Test</h1>
+    <div id="results"></div>
+    
+    <script>
+        const userAgent = navigator.userAgent;
+        const isIOS = /iPhone|iPad|iPod/i.test(userAgent);
+        const isMobileUA = /Mobi|Android|iPhone|iPad|iPod/i.test(userAgent);
+        const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+        const isNarrowViewport = window.innerWidth < 768;
+        const hasLowMemory = navigator.deviceMemory ? navigator.deviceMemory <= 4 : false;
+        
+        const isMobile = isMobileUA || (isTouchDevice && isNarrowViewport) || hasLowMemory;
+        const tier = (isMobile || isIOS) ? "mobileLow" : "desktopHigh";
+        
+        document.getElementById('results').innerHTML = `
+            <div class="result ${isIOS ? 'ios' : 'not-ios'}">
+                <h2>iOS Detected: ${isIOS ? 'YES ✅' : 'NO ❌'}</h2>
+            </div>
+            <div class="result">
+                <h3>User Agent:</h3>
+                <p>${userAgent}</p>
+            </div>
+            <div class="result">
+                <h3>Detection Details:</h3>
+                <p>Mobile UA: ${isMobileUA}</p>
+                <p>Touch Device: ${isTouchDevice}</p>
+                <p>Narrow Viewport: ${isNarrowViewport}</p>
+                <p>Low Memory: ${hasLowMemory}</p>
+                <p>Device Memory: ${navigator.deviceMemory || 'unknown'} GB</p>
+            </div>
+            <div class="result">
+                <h3>Performance Tier:</h3>
+                <p style="font-size: 24px; font-weight: bold;">${tier}</p>
+            </div>
+            <div class="result">
+                <h3>iOS Optimizations Applied:</h3>
+                <ul>
+                    <li>Canvas Delay: ${isIOS ? '1500ms ✅' : '500ms'}</li>
+                    <li>HDRI: ${isIOS ? 'DISABLED ✅' : 'enabled'}</li>
+                    <li>Shadows: ${isIOS ? 'DISABLED ✅' : 'enabled'}</li>
+                    <li>Draco: ${isIOS ? 'DISABLED ✅' : 'enabled'}</li>
+                    <li>GPU Mode: ${isIOS ? 'low-power ✅' : 'high-performance'}</li>
+                    <li>Shader Precision: ${isIOS ? 'mediump ✅' : 'highp'}</li>
+                    <li>Model Loading: ${isIOS ? 'sequential ✅' : 'parallel'}</li>
+                </ul>
+            </div>
+        `;
+    </script>
+</body>
+</html>

@@ -1,0 +1,157 @@
+{
+  "name": "boxes",
+  "children": [
+    {
+      "name": "Fifth Street Building",
+      "children": [
+        {
+          "name": "Ground Floor",
+          "children": [
+            "Club 76.glb",
+            "F-10.glb",
+            "F-15.glb",
+            "F-20.glb",
+            "F-25.glb",
+            "F-30.glb",
+            "F-35.glb",
+            "F-40.glb",
+            "F-50.glb",
+            "F-60.glb",
+            "F-70.glb",
+            "FG - Library.glb",
+            "FG - Restroom.glb"
+          ]
+        },
+        {
+          "name": "First Floor",
+          "children": [
+            "F-100.glb",
+            "F-105.glb",
+            "F-110 CR.glb",
+            "F-115.glb",
+            "F-140.glb",
+            "F-150.glb",
+            "F-160.glb",
+            "F-170.glb",
+            "F-175.glb",
+            "F-180 .glb",
+            "F-185.glb",
+            "F-187.glb",
+            "F-190.glb",
+            "F1 Restrooms.glb"
+          ]
+        },
+        {
+          "name": "Second Floor",
+          "children": [
+            "F-200.glb",
+            "F-240.glb",
+            "F-250.glb",
+            "F-280.glb",
+            "F-290.glb",
+            "F2 Restrooms.glb"
+          ]
+        },
+        {
+          "name": "Third Floor",
+          "children": [
+            "F-300.glb",
+            "F-330.glb",
+            "F-340.glb",
+            "F-350.glb",
+            "F-360.glb",
+            "F-363.glb",
+            "F-365.glb",
+            "F-380.glb",
+            "F3 Restrooms.glb"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Maryland Building",
+      "children": [
+        {
+          "name": "Ground Floor",
+          "children": [
+            "ET Lab.glb",
+            "M-20.glb",
+            "M-40.glb",
+            "M-45.glb",
+            "M-50.glb",
+            "MG - Stage 7 .glb",
+            "Studio O.M..glb"
+          ]
+        },
+        {
+          "name": "First Floor",
+          "children": [
+            "M-120.glb",
+            "M-130.glb",
+            "M-140.glb",
+            "M-145.glb",
+            "M-150.glb",
+            "M-160.glb",
+            "M-170.glb",
+            "M-180.glb",
+            "M1 Resstroom 2.glb",
+            "M1 Restrooms.glb"
+          ]
+        },
+        {
+          "name": "Second Floor",
+          "children": [
+            "M-210.glb",
+            "M-220.glb",
+            "M-230.glb",
+            "M-240.glb",
+            "M-250.glb",
+            "M-260.glb",
+            "M-270.glb",
+            "M2 Restroom.glb"
+          ]
+        },
+        {
+          "name": "Third Floor",
+          "children": [
+            "M-300.glb",
+            "M-320.glb",
+            "M-340.glb",
+            "M-345.glb",
+            "M-350.glb",
+            "M3 Restroom.glb"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Tower Building",
+      "children": [
+        "T-100.glb",
+        "T-110.glb",
+        "T-200.glb",
+        "T-210.glb",
+        "T-220.glb",
+        "T-230.glb",
+        "T-300.glb",
+        "T-320.glb",
+        "T-400 .glb",
+        "T-410 .glb",
+        "T-420 .glb",
+        "T-430 .glb",
+        "T-450 .glb",
+        "T-500.glb",
+        "T-530.glb",
+        "T-550.glb",
+        "T-600.glb",
+        "T-700 .glb",
+        "T-800 .glb",
+        "T-900 .glb",
+        "T-950.glb",
+        "T-1000 .glb",
+        "T-1100 .glb",
+        "T-1200 .glb"
+      ]
+    }
+  ]
+}
